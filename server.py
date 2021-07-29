@@ -272,7 +272,8 @@ class Server:
         pathDb = "test"
         
         
-
+if os.path.exists(pathDb) != True:
+    os.makedirs(pathDb)
 
 s = Server()
 #s.run()
