@@ -12,6 +12,16 @@ ou :
 py --version
 ```
 
+## Fonctionnalité
+
+Serveur peut gérer plusieur clients en même temps.
+
+Fonction Reverse Shell.
+
+Fonction Keylogger.
+
+Fonction Persistance.
+
 ## Utilisation
 Lancer d'abort le serveur :
 ```cmd
