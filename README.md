@@ -22,6 +22,8 @@ Fonction Keylogger.
 
 Fonction Persistance.
 
+Stocke les informations recupérer des fichiers .json
+
 ## Utilisation
 Lancer d'abort le serveur :
 ```cmd
