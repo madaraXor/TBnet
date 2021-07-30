@@ -35,6 +35,9 @@ Lancer le client :
 ```cmd
 python client.py
 ```
+
+__Disclaimer__: Le payload est au format.py, utiliser un outils comme cx_freeze pour le transformer en .exe.
+
 ### Commande du server
 
 help --- Afficher le menu d'aide.
