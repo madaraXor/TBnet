@@ -1,4 +1,3 @@
-#from client import Persistance
 import socket
 import threading
 import time
