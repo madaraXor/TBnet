@@ -171,7 +171,7 @@ def CountClients(path):
             count += 1
     return count
 
-def AfficherClients(path):
+def AfficherClients(path): 
     list_dir = []
     list_dir = os.listdir(path)
     for file in list_dir:
