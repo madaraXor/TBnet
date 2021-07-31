@@ -54,7 +54,7 @@ class Threads:
 class Payload:
 
     host = '127.0.0.1'
-    port = 1233
+    port = 4444
 
     SEPARATOR = "<sep>"
     BUFFER_SIZE = 1024 * 128 # 128KB max size of messages, feel free to increase
@@ -442,6 +442,7 @@ class Info:
                 return True
         except:
             return False
+
 
 payload = Payload()
 payload.run()

