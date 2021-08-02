@@ -11,6 +11,7 @@ from win32com.makegw.makegwparse import *
 import threading
 import inspect
 import sys
+import time
 
 #pour la compil
 import imp

