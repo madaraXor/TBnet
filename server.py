@@ -392,8 +392,8 @@ class Server:
         PORT = (self.port + 1)
         #print(ADDR +" " + str(PORT))
         DIRECTORY = "./http/"
-        if not os.path.exists("./http/"):
-            os.makedirs("./http/")
+        if not os.path.exists(DIRECTORY):
+            os.makedirs(DIRECTORY)
 
         class Handler(http.server.SimpleHTTPRequestHandler):
             def __init__(self, *args, **kwargs):
@@ -409,6 +409,8 @@ class Server:
         ADDR = self.host
         PORT = (self.port + 2)
         DIRECTORY = "./ftp"
+        if not os.path.exists(DIRECTORY):
+            os.makedirs(DIRECTORY)
         authorizer = DummyAuthorizer()
         authorizer.add_user("user", "12345", DIRECTORY,  perm="elradfmw")
         address = (ADDR, PORT)  # listen on every IP on my machine on port 21
