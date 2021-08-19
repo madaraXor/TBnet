@@ -5,3 +5,4 @@ requests==2.26.0
 urllib3==1.26.6
 yarg==0.1.9
 zstandard==0.15.2
+pyftpdlib==1.5.6

