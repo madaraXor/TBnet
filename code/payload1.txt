@@ -12,11 +12,17 @@ import threading
 import inspect
 import sys
 import time
+import random
+import string
 from ftplib import FTP
 
 # pour la compil
 import imp
 
+def getString(length=6):
+    """Générer une chaîne aléatoire de longueur fixe"""
+    str = string.ascii_lowercase
+    return ''.join(random.choice(str) for i in range(length))
 
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""

