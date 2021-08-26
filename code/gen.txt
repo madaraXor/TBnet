@@ -1,0 +1,212 @@
+
+size = 200
+
+fen1 = Tk()
+fen1.title("Générateur " + name_app)
+fen1.geometry("400x400")
+fen1.maxsize(500,500)
+fen1.minsize(400,400)
+
+text_aff = StringVar()
+text_aff.set("Bienvenue")
+
+text_aff_brutforce = StringVar()
+text_aff_brutforce.set("testsetestsee")
+
+text_aff_final = StringVar()
+text_aff_final.set("testsetestsee")
+
+
+
+generer = False
+
+maxValue = 1000
+value = 0
+
+def _async_raise(tid, exctype):
+    """raises the exception, performs cleanup if needed"""
+    tid = ctypes.c_long(tid)
+    if not inspect.isclass(exctype):
+        exctype = type(exctype)
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+    if res == 0:
+        raise ValueError("invalid thread id")
+    elif res != 1:
+        # """if it returns a number greater than one, you're in trouble,
+        # and you should call it again with exc=NULL to revert the effect"""
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+        raise SystemError("PyThreadState_SetAsyncExc failed")
+
+class Threads:
+
+    thread_id = 0
+    thread_name = "null"
+
+    def StartThread(self, fonction, arg1 = "", arg2 = "" ,arg3 = ""):
+        if "Progresse" in fonction:
+            thread = threading.Thread(target=Progresse, name=fonction)
+            thread.start()
+
+        self.thread_id = thread.ident
+        self.thread_name = thread.name
+    
+    def StopThread(self):
+        print("Arret du Thread : " + self.thread_name + ", numéro : " + str(self.thread_id))
+        _async_raise(self.thread_id, SystemExit)
+
+
+def getString(length=6):
+    """Générer une chaîne aléatoire de longueur fixe"""
+    str = string.ascii_lowercase
+    return ''.join(random.choice(str) for i in range(length))
+
+def Run():
+    global generer
+    global value
+    global maxValue
+    global pb
+
+    global time_sleep
+    global aff_compte
+    
+    t = Threads()
+
+    if generer == False:
+        print("Lancement de la fonction run")
+        generer = True
+        
+        pb = ttk.Progressbar(FrameMillieuBas, orient="horizontal", length=200, mode="determinate")
+        pb.pack()
+        pb["value"] = 0
+        pb["maximum"] = maxValue
+        
+        aff_compte = Label(FrameMillieu, textvariable=text_aff, fg='black')
+        aff_compte.pack()
+        ## Affichage du text
+        time_sleep = 2000
+        aff_compte.after(time_sleep, ChangeText, "Lancement du Générateur.")
+        #aff_compte.after(time_sleep, ChangeValue, 20)
+        aff_compte.after(time_sleep, t.StartThread, "Progresse")
+        #t.StartThread("Progresse")
+
+        time_sleep = time_sleep + 2000
+        aff_compte.after(time_sleep, ChangeText, "Tentative de connexion à l'api de " + name_app + ".")
+        #aff_compte.after(time_sleep, ChangeValue, 50)
+        time_sleep = time_sleep + 3000
+        aff_compte.after(time_sleep, ChangeText, "Connexion réussi.")
+        #aff_compte.after(time_sleep, ChangeValue, 50)
+        time_sleep = time_sleep + 1000
+        aff_compte.after(time_sleep, ChangeText, "Lancement du brutforce de compte.")
+        #aff_compte.after(time_sleep, ChangeValue, 20)
+
+        ## Lancement du brutforce
+        aff_compte.after(time_sleep, BrutForce)
+        #aff_compte.after(time_sleep, ChangeValue, 10)
+
+        for i in range(0, 100, 1):
+            time_sleep = time_sleep + 75
+            aff_compte.after(time_sleep, ChangeText, "test1", "brutforce", True)
+            #aff_compte.after(time_sleep, ChangeValue, 2)
+
+        aff_compte.after(time_sleep, ChangeText, "Compte Générer", "compte")
+        aff_compte.after(time_sleep, ChangeText, "SUCCES !", "brutforce")
+
+        ## Afficher les compte générer
+        aff_compte.after(time_sleep, AffCompteFinal)
+
+        #time_sleep = time_sleep + 1000
+        aff_compte.after(time_sleep, ChangeText, "testset88888888", "final", True)
+    else:
+        print("deja lancer")
+
+
+def ChangeValue(valueAj):
+    global value
+    global maxValue
+    global pb
+    value = value + valueAj
+    pb["value"] = value
+
+def Progresse():
+    time_sleepp = 0
+    global aff_compte
+    for i in range(0,1000,1):
+        time_sleepp = time_sleepp + 13
+        aff_compte.after(time_sleepp, ChangeValue, 1)
+
+def ChangeText(text="sans arg", cible = "compte", rdm = False):
+    if cible == "compte":
+        if rdm:
+            text_aff.set(getString(random.randint(8, 12)))
+        else:
+            text_aff.set(text)
+    elif cible == "brutforce":
+        if rdm:
+            text_aff_brutforce.set(getString(random.randint(8, 12)))
+        else:
+            text_aff_brutforce.set(text)
+    elif cible == "final":
+        if rdm:
+            if random.randint(0,1) == 1:
+                mailbox = "gmail"
+            else:
+                mailbox = "hotmail"
+            mail = "{}.{}@{}.com".format(getString(random.randint(3, 6)), getString(random.randint(3, 6)), mailbox)
+            mpass = getString(random.randint(6, 12))
+            text_aff_final.set("mail : " + mail + "\n pass : " + mpass)
+        else:
+            text_aff_final.set(text)
+
+def BrutForce():
+    aff_brutforce = Label(FrameMillieu, textvariable=text_aff_brutforce, fg='black')
+    aff_brutforce.pack()
+
+def AffCompteFinal():
+    aff_final = Label(FrameMillieu, textvariable=text_aff_final, fg='black')
+    aff_final.pack()
+
+
+# frame haut
+FrameHaut = Frame(fen1, borderwidth=2, relief=GROOVE)
+FrameHaut.pack(side=TOP, padx=30, pady=30)
+
+# frame millieu
+FrameMillieu = Frame(fen1, borderwidth=2, relief=GROOVE)
+FrameMillieu.pack(side=TOP, padx=30, pady=30)
+# frame millieu bas
+FrameMillieuBas = Frame(fen1, borderwidth=2, relief=GROOVE)
+FrameMillieuBas.pack(side=TOP, padx=30, pady=30)
+
+# frame bas
+FrameBas = Frame(fen1, borderwidth=2, relief=GROOVE)
+FrameBas.pack(side=BOTTOM, padx=10, pady=10)
+
+# frame droite
+FrameDroite = Frame(fen1, bg="white", borderwidth=2, relief=GROOVE)
+FrameDroite.pack(side=RIGHT, padx=5, pady=5)
+
+# frame gauche
+FrameGauche = Frame(fen1, bg="white", borderwidth=2, relief=GROOVE)
+FrameGauche.pack(side=LEFT, padx=5, pady=5)
+
+# Ajout de labels
+"""
+Label(Frame1, text="haut").pack(padx=10, pady=10)
+Label(Frame2, text="bas").pack(padx=10, pady=10)
+Label(Frame3, text="droite",bg="white").pack(padx=10, pady=10)
+Label(Frame4, text="gauche").pack(padx=10, pady=10)
+"""
+
+bou1 = Button(FrameBas, text='Quitter', command = fen1.destroy)
+bou1.pack()
+
+tex1 = Label(FrameHaut, text='Générateur compte : ' + name_app, fg='red')
+tex1.pack()
+
+## Bouton Générer
+bou1 = Button(FrameHaut, text='Générer', command = Run)
+bou1.pack()
+
+
+
+fen1.mainloop()
